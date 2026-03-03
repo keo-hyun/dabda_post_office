@@ -122,6 +122,16 @@ button.ghost {
   margin-top: 12px;
 }
 
+.success {
+  color: var(--accent);
+  margin-top: 12px;
+}
+
+.muted {
+  color: var(--muted);
+  margin-top: 10px;
+}
+
 .letter-content {
   white-space: pre-wrap;
   background: #fffdf4;

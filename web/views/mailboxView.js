@@ -16,6 +16,8 @@ export function renderMailboxView(container, state, handlers) {
     <section class="card">
       <p class="eyebrow">PHASE 2</p>
       <h2>우체통 둘러보기</h2>
+      ${state.loading ? '<p class="muted">우체통을 불러오는 중...</p>' : ''}
+      ${state.error ? `<p class="error">${state.error}</p>` : ''}
       <ul class="mailbox-list">${items || '<li>아직 공개된 편지가 없어요.</li>'}</ul>
     </section>
   `;

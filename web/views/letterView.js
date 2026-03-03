@@ -4,6 +4,7 @@ export function renderLetterView(container, state, handlers) {
     container.innerHTML = '<section class="card"><p>편지를 불러오는 중입니다.</p></section>';
     return;
   }
+  const disabled = state.loading ? 'disabled' : '';
 
   const comments = (letter.comments || [])
     .map((comment) => `<li><strong>${comment.nickname}</strong>: ${comment.content}</li>`)
@@ -15,13 +16,15 @@ export function renderLetterView(container, state, handlers) {
       <h2>${letter.nickname} 님의 편지</h2>
       <p class="letter-content">${letter.content}</p>
       <h3>댓글</h3>
+      ${state.error ? `<p class="error">${state.error}</p>` : ''}
+      ${state.success ? `<p class="success">${state.success}</p>` : ''}
       <ul class="comment-list">${comments || '<li>첫 댓글을 남겨보세요.</li>'}</ul>
       <form id="commentForm" class="stack">
         <label for="commentNickname">닉네임</label>
-        <input id="commentNickname" required />
+        <input id="commentNickname" required ${disabled} />
         <label for="commentContent">댓글</label>
-        <textarea id="commentContent" rows="3" required></textarea>
-        <button type="submit">댓글 남기기</button>
+        <textarea id="commentContent" rows="3" required ${disabled}></textarea>
+        <button type="submit" ${disabled}>댓글 남기기</button>
       </form>
     </section>
   `;
