@@ -1,4 +1,5 @@
 const { enterRoute, registerOrLoginRoute } = require('./routes/auth.js');
+const { phaseRoute } = require('./routes/phase.js');
 
 function jsonResponse(payload) {
   return JSON.stringify(payload);
@@ -19,6 +20,17 @@ function doPost(e) {
   return jsonResponse({ ok: false, message: 'NOT_FOUND' });
 }
 
+function doGet(e) {
+  const path = e?.parameter?.path || '';
+
+  if (path === '/api/phase') {
+    return jsonResponse(phaseRoute());
+  }
+
+  return jsonResponse({ ok: false, message: 'NOT_FOUND' });
+}
+
 module.exports = {
+  doGet,
   doPost
 };

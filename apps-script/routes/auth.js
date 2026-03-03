@@ -1,10 +1,13 @@
 const { validateEntryCode, hashPassword, verifyPassword } = require('../../src/backend/core/authCore.js');
+const { resolvePhase } = require('../../src/shared/phase.js');
 
 function enterRoute(body = {}, env = {}) {
   const ok = validateEntryCode(body.entryCode, env.ENTRY_CODE || '');
+  const phase = resolvePhase(env.now ? new Date(env.now) : new Date());
 
   return {
     ok,
+    phase,
     message: ok ? 'ENTRY_OK' : 'INVALID_ENTRY_CODE'
   };
 }
