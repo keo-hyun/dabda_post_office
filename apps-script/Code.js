@@ -1,4 +1,6 @@
+const { adminDeleteCommentRoute, reportActionRoute } = require('./routes/admin.js');
 const { enterRoute, registerOrLoginRoute } = require('./routes/auth.js');
+const { createCommentRoute, deleteCommentRoute, updateCommentRoute } = require('./routes/comments.js');
 const { createLetterRoute, getLetterByIdRoute, getMailboxesRoute } = require('./routes/letters.js');
 const { phaseRoute } = require('./routes/phase.js');
 
@@ -22,6 +24,14 @@ function doPost(e) {
     return jsonResponse(createLetterRoute(body));
   }
 
+  if (path === '/api/comments') {
+    return jsonResponse(createCommentRoute(body));
+  }
+
+  if (path === '/api/admin/report-action') {
+    return jsonResponse(reportActionRoute(body, 'admin'));
+  }
+
   return jsonResponse({ ok: false, message: 'NOT_FOUND' });
 }
 
@@ -43,7 +53,35 @@ function doGet(e) {
   return jsonResponse({ ok: false, message: 'NOT_FOUND' });
 }
 
+function doPatch(e) {
+  const path = e?.parameter?.path || '';
+  const body = JSON.parse(e?.postData?.contents || '{}');
+
+  if (path.startsWith('/api/comments/')) {
+    return jsonResponse(updateCommentRoute(null, body, {}));
+  }
+
+  return jsonResponse({ ok: false, message: 'NOT_FOUND' });
+}
+
+function doDelete(e) {
+  const path = e?.parameter?.path || '';
+  const body = JSON.parse(e?.postData?.contents || '{}');
+
+  if (path.startsWith('/api/admin/comments/')) {
+    return jsonResponse(adminDeleteCommentRoute(null, 'admin'));
+  }
+
+  if (path.startsWith('/api/comments/')) {
+    return jsonResponse(deleteCommentRoute(null, body, {}));
+  }
+
+  return jsonResponse({ ok: false, message: 'NOT_FOUND' });
+}
+
 module.exports = {
+  doDelete,
   doGet,
+  doPatch,
   doPost
 };
