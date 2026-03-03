@@ -92,20 +92,25 @@ function mockApi() {
 }
 
 function realApi(baseUrl = '') {
+  const useCorsSafePost = Boolean(baseUrl);
+  const postHeaders = {
+    'Content-Type': useCorsSafePost ? 'text/plain;charset=UTF-8' : 'application/json'
+  };
+
+  function postJson(path, payload) {
+    return requestJson(resolveApiUrl(baseUrl, path), {
+      method: 'POST',
+      headers: postHeaders,
+      body: JSON.stringify(payload)
+    });
+  }
+
   return {
     async enter(entryCode) {
-      return requestJson(resolveApiUrl(baseUrl, '/api/enter'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entryCode })
-      });
+      return postJson('/api/enter', { entryCode });
     },
     async submitLetter(payload) {
-      return requestJson(resolveApiUrl(baseUrl, '/api/letters'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      return postJson('/api/letters', payload);
     },
     async getMailboxes() {
       return requestJson(resolveApiUrl(baseUrl, '/api/mailboxes'));
@@ -114,11 +119,7 @@ function realApi(baseUrl = '') {
       return requestJson(resolveApiUrl(baseUrl, `/api/letters/${letterId}`));
     },
     async createComment(letterId, payload) {
-      return requestJson(resolveApiUrl(baseUrl, '/api/comments'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ letter_id: letterId, ...payload })
-      });
+      return postJson('/api/comments', { letter_id: letterId, ...payload });
     }
   };
 }
