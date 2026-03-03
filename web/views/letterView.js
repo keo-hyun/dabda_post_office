@@ -1,0 +1,37 @@
+export function renderLetterView(container, state, handlers) {
+  const letter = state.selectedLetter;
+  if (!letter) {
+    container.innerHTML = '<section class="card"><p>편지를 불러오는 중입니다.</p></section>';
+    return;
+  }
+
+  const comments = (letter.comments || [])
+    .map((comment) => `<li><strong>${comment.nickname}</strong>: ${comment.content}</li>`)
+    .join('');
+
+  container.innerHTML = `
+    <section class="card">
+      <button type="button" class="ghost" id="backToMailbox">목록으로</button>
+      <h2>${letter.nickname} 님의 편지</h2>
+      <p class="letter-content">${letter.content}</p>
+      <h3>댓글</h3>
+      <ul class="comment-list">${comments || '<li>첫 댓글을 남겨보세요.</li>'}</ul>
+      <form id="commentForm" class="stack">
+        <label for="commentNickname">닉네임</label>
+        <input id="commentNickname" required />
+        <label for="commentContent">댓글</label>
+        <textarea id="commentContent" rows="3" required></textarea>
+        <button type="submit">댓글 남기기</button>
+      </form>
+    </section>
+  `;
+
+  container.querySelector('#backToMailbox').addEventListener('click', handlers.onBack);
+  container.querySelector('#commentForm').addEventListener('submit', (event) => {
+    event.preventDefault();
+    handlers.onSubmitComment({
+      nickname: container.querySelector('#commentNickname').value,
+      content: container.querySelector('#commentContent').value
+    });
+  });
+}
