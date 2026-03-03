@@ -1,4 +1,5 @@
 const { enterRoute, registerOrLoginRoute } = require('./routes/auth.js');
+const { createLetterRoute, getLetterByIdRoute, getMailboxesRoute } = require('./routes/letters.js');
 const { phaseRoute } = require('./routes/phase.js');
 
 function jsonResponse(payload) {
@@ -17,6 +18,10 @@ function doPost(e) {
     return jsonResponse(registerOrLoginRoute(body, null));
   }
 
+  if (path === '/api/letters') {
+    return jsonResponse(createLetterRoute(body));
+  }
+
   return jsonResponse({ ok: false, message: 'NOT_FOUND' });
 }
 
@@ -25,6 +30,14 @@ function doGet(e) {
 
   if (path === '/api/phase') {
     return jsonResponse(phaseRoute());
+  }
+
+  if (path === '/api/mailboxes') {
+    return jsonResponse(getMailboxesRoute([], { phase: 'PHASE_2' }));
+  }
+
+  if (path.startsWith('/api/letters/')) {
+    return jsonResponse(getLetterByIdRoute(null, {}));
   }
 
   return jsonResponse({ ok: false, message: 'NOT_FOUND' });
