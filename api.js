@@ -40,6 +40,16 @@ async function requestJson(path, options = {}) {
   return payload || { ok: true };
 }
 
+function resolveApiUrl(baseUrl, path) {
+  if (!baseUrl) {
+    return path;
+  }
+
+  const trimmed = String(baseUrl).trim().replace(/\/+$/, '');
+  const delimiter = trimmed.includes('?') ? '&' : '?';
+  return `${trimmed}${delimiter}path=${encodeURIComponent(path)}`;
+}
+
 function mockApi() {
   return {
     async enter(entryCode) {
@@ -81,30 +91,30 @@ function mockApi() {
   };
 }
 
-function realApi() {
+function realApi(baseUrl = '') {
   return {
     async enter(entryCode) {
-      return requestJson('/api/enter', {
+      return requestJson(resolveApiUrl(baseUrl, '/api/enter'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entryCode })
       });
     },
     async submitLetter(payload) {
-      return requestJson('/api/letters', {
+      return requestJson(resolveApiUrl(baseUrl, '/api/letters'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
     },
     async getMailboxes() {
-      return requestJson('/api/mailboxes');
+      return requestJson(resolveApiUrl(baseUrl, '/api/mailboxes'));
     },
     async getLetter(letterId) {
-      return requestJson(`/api/letters/${letterId}`);
+      return requestJson(resolveApiUrl(baseUrl, `/api/letters/${letterId}`));
     },
     async createComment(letterId, payload) {
-      return requestJson('/api/comments', {
+      return requestJson(resolveApiUrl(baseUrl, '/api/comments'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ letter_id: letterId, ...payload })
@@ -115,10 +125,19 @@ function realApi() {
 
 export function createApiClient() {
   const runtimeFlag = typeof window !== 'undefined' ? window.__DABDA_USE_REAL_API__ : undefined;
+  const query = typeof window !== 'undefined' ? new URLSearchParams(window.location.search || '') : null;
+  const queryMode = query ? String(query.get('apiMode') || '').toLowerCase() : '';
+  const queryBase = query ? String(query.get('apiBase') || '').trim() : '';
+  const runtimeBase =
+    typeof window !== 'undefined' && typeof window.__DABDA_API_BASE_URL__ === 'string'
+      ? window.__DABDA_API_BASE_URL__.trim()
+      : '';
   const isLocal =
     typeof window !== 'undefined' &&
     (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
-  const useReal = runtimeFlag !== false && (runtimeFlag === true || !isLocal);
+  const useReal =
+    queryMode === 'real' ? true : queryMode === 'mock' ? false : runtimeFlag !== false && (runtimeFlag === true || !isLocal);
+  const baseUrl = runtimeBase || queryBase;
 
-  return useReal ? realApi() : mockApi();
+  return useReal ? realApi(baseUrl) : mockApi();
 }
