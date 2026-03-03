@@ -9,6 +9,7 @@ test('phase2: user can read mailbox and write comment', async ({ page }) => {
   await page.locator('.letter-button').first().click();
 
   await expect(page.getByRole('heading', { level: 2 })).toContainText('님의 편지');
+  await expect(page.getByRole('heading', { name: '댓글' })).toBeVisible();
   await page.getByLabel('닉네임').fill('테스터');
   await page.getByLabel('댓글').fill('반가워요');
   await page.getByRole('button', { name: '댓글 남기기' }).click();
