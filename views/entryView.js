@@ -1,4 +1,4 @@
-export function renderEntryView(container, state, handlers) {
+export function renderEntryView(container, state, handlers, options = {}) {
   const disabled = state.loading ? 'disabled' : '';
   const loadingText = state.loading ? '<p class="muted">확인 중...</p>' : '';
   container.innerHTML = `
@@ -24,4 +24,10 @@ export function renderEntryView(container, state, handlers) {
     event.preventDefault();
     handlers.onEnter(input.value);
   });
+
+  if (options.restoreInputFocus && !state.loading) {
+    input.focus();
+    const cursorPosition = input.value.length;
+    input.setSelectionRange(cursorPosition, cursorPosition);
+  }
 }
