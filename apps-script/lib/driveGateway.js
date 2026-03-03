@@ -29,7 +29,9 @@ function uploadImageToDrive(dataUri, folderId, filename, services = {}) {
   };
 }
 
-module.exports = {
-  normalizeBase64Image,
-  uploadImageToDrive
-};
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    normalizeBase64Image,
+    uploadImageToDrive
+  };
+}

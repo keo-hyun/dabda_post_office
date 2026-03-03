@@ -1,47 +1,64 @@
-const { hashPassword, verifyPassword } = require('../../src/backend/core/authCore.js');
-const { canEditComment, softDeleteComment } = require('../../src/backend/core/commentsCore.js');
-const { buildMetricEvent } = require('../../src/backend/core/metricsCore.js');
+function commentsCore() {
+  if (typeof canEditComment === 'function') {
+    return {
+      buildMetricEvent: buildMetricEvent,
+      canEditComment: canEditComment,
+      hashPassword: hashPassword,
+      softDeleteComment: softDeleteComment,
+      verifyPassword: verifyPassword
+    };
+  }
 
-function createCommentRoute(body = {}, deps = {}) {
-  const sheetsGateway = deps.sheetsGateway || null;
-  const spreadsheetId = deps.spreadsheetId || '';
-  const nickname = String(body.nickname || '').trim();
-  const password = String(body.password || '');
-  const content = String(body.content || '').trim();
+  return require('../lib/core.js');
+}
 
-  if (!body.letter_id || !nickname || !password || !content) {
+function createCommentRoute(body, deps) {
+  var payload = body || {};
+  var options = deps || {};
+  var core = commentsCore();
+  var sheetsGateway = options.sheetsGateway || null;
+  var spreadsheetId = options.spreadsheetId || '';
+  var nickname = String(payload.nickname || '').trim();
+  var password = String(payload.password || '');
+  var content = String(payload.content || '').trim();
+
+  if (!payload.letter_id || !nickname || !password || !content) {
     return { ok: false, message: 'INVALID_PAYLOAD' };
   }
 
-  const comment = {
-    comment_id: body.comment_id || `c_${Date.now()}`,
-    letter_id: body.letter_id,
-    nickname,
-    password_hash: hashPassword(password),
-    content,
+  var comment = {
+    comment_id: payload.comment_id || 'c_' + Date.now(),
+    letter_id: payload.letter_id,
+    nickname: nickname,
+    password_hash: core.hashPassword(password),
+    content: content,
     created_at: new Date().toISOString(),
     updated_at: null,
     deleted_at: null
   };
 
   if (sheetsGateway && spreadsheetId) {
-    sheetsGateway.appendRow('Comments', comment, { spreadsheetId });
+    sheetsGateway.appendRow('Comments', comment, { spreadsheetId: spreadsheetId });
   }
 
   return {
     ok: true,
-    comment,
-    metric: buildMetricEvent('COMMENT_CREATED', { userId: body.user_id || '' })
+    comment: comment,
+    metric: core.buildMetricEvent('COMMENT_CREATED', { userId: payload.user_id || '' })
   };
 }
 
-function updateCommentRoute(comment = null, body = {}, context = {}, deps = {}) {
-  const sheetsGateway = deps.sheetsGateway || null;
-  const spreadsheetId = deps.spreadsheetId || '';
-  let source = comment;
+function updateCommentRoute(comment, body, context, deps) {
+  var source = comment || null;
+  var payload = body || {};
+  var ctx = context || {};
+  var options = deps || {};
+  var core = commentsCore();
+  var sheetsGateway = options.sheetsGateway || null;
+  var spreadsheetId = options.spreadsheetId || '';
 
-  if (!source && sheetsGateway && spreadsheetId && body.comment_id) {
-    const found = sheetsGateway.findRowBy('Comments', 'comment_id', body.comment_id, { spreadsheetId });
+  if (!source && sheetsGateway && spreadsheetId && payload.comment_id) {
+    var found = sheetsGateway.findRowBy('Comments', 'comment_id', payload.comment_id, { spreadsheetId: spreadsheetId });
     source = found ? found.row : null;
   }
 
@@ -49,37 +66,40 @@ function updateCommentRoute(comment = null, body = {}, context = {}, deps = {}) 
     return { ok: false, message: 'COMMENT_NOT_FOUND' };
   }
 
-  const passwordOk = verifyPassword(String(body.password || ''), source.password_hash);
-  if (!canEditComment(source, { ...context, passwordOk })) {
+  var passwordOk = core.verifyPassword(String(payload.password || ''), source.password_hash);
+  if (!core.canEditComment(source, Object.assign({}, ctx, { passwordOk: passwordOk }))) {
     return { ok: false, message: 'FORBIDDEN' };
   }
 
-  const updatedComment = {
-    ...source,
-    content: String(body.content || source.content),
+  var updatedComment = Object.assign({}, source, {
+    content: String(payload.content || source.content),
     updated_at: new Date().toISOString()
-  };
+  });
 
   if (sheetsGateway && spreadsheetId) {
     sheetsGateway.updateRowBy('Comments', 'comment_id', updatedComment.comment_id, updatedComment, {
-      spreadsheetId
+      spreadsheetId: spreadsheetId
     });
   }
 
   return {
     ok: true,
     comment: updatedComment,
-    metric: buildMetricEvent('COMMENT_UPDATED', { userId: body.user_id || '' })
+    metric: core.buildMetricEvent('COMMENT_UPDATED', { userId: payload.user_id || '' })
   };
 }
 
-function deleteCommentRoute(comment = null, body = {}, context = {}, deps = {}) {
-  const sheetsGateway = deps.sheetsGateway || null;
-  const spreadsheetId = deps.spreadsheetId || '';
-  let source = comment;
+function deleteCommentRoute(comment, body, context, deps) {
+  var source = comment || null;
+  var payload = body || {};
+  var ctx = context || {};
+  var options = deps || {};
+  var core = commentsCore();
+  var sheetsGateway = options.sheetsGateway || null;
+  var spreadsheetId = options.spreadsheetId || '';
 
-  if (!source && sheetsGateway && spreadsheetId && body.comment_id) {
-    const found = sheetsGateway.findRowBy('Comments', 'comment_id', body.comment_id, { spreadsheetId });
+  if (!source && sheetsGateway && spreadsheetId && payload.comment_id) {
+    var found = sheetsGateway.findRowBy('Comments', 'comment_id', payload.comment_id, { spreadsheetId: spreadsheetId });
     source = found ? found.row : null;
   }
 
@@ -87,27 +107,29 @@ function deleteCommentRoute(comment = null, body = {}, context = {}, deps = {}) 
     return { ok: false, message: 'COMMENT_NOT_FOUND' };
   }
 
-  const passwordOk = verifyPassword(String(body.password || ''), source.password_hash);
-  if (!canEditComment(source, { ...context, passwordOk })) {
+  var passwordOk = core.verifyPassword(String(payload.password || ''), source.password_hash);
+  if (!core.canEditComment(source, Object.assign({}, ctx, { passwordOk: passwordOk }))) {
     return { ok: false, message: 'FORBIDDEN' };
   }
 
-  const softDeleted = softDeleteComment(source);
+  var softDeleted = core.softDeleteComment(source);
   if (sheetsGateway && spreadsheetId) {
     sheetsGateway.updateRowBy('Comments', 'comment_id', softDeleted.comment_id, softDeleted, {
-      spreadsheetId
+      spreadsheetId: spreadsheetId
     });
   }
 
   return {
     ok: true,
     comment: softDeleted,
-    metric: buildMetricEvent('COMMENT_DELETED', { userId: body.user_id || '' })
+    metric: core.buildMetricEvent('COMMENT_DELETED', { userId: payload.user_id || '' })
   };
 }
 
-module.exports = {
-  createCommentRoute,
-  deleteCommentRoute,
-  updateCommentRoute
-};
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    createCommentRoute: createCommentRoute,
+    deleteCommentRoute: deleteCommentRoute,
+    updateCommentRoute: updateCommentRoute
+  };
+}

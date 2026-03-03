@@ -1,14 +1,16 @@
-const { resolvePhase } = require('../../src/shared/phase.js');
-
-function phaseRoute(env = {}) {
-  const now = env.now ? new Date(env.now) : new Date();
+function phaseRoute(env) {
+  var runtime = env || {};
+  var now = runtime.now ? new Date(runtime.now) : new Date();
+  var phaseResolver = typeof resolvePhase === 'function' ? resolvePhase : require('../lib/core.js').resolvePhase;
 
   return {
     ok: true,
-    phase: resolvePhase(now)
+    phase: phaseResolver(now)
   };
 }
 
-module.exports = {
-  phaseRoute
-};
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    phaseRoute: phaseRoute
+  };
+}

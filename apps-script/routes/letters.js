@@ -1,73 +1,105 @@
-const { canViewLetter, validateLetterPayload } = require('../../src/backend/core/lettersCore.js');
-const { buildMetricEvent } = require('../../src/backend/core/metricsCore.js');
-const driveGatewayLib = require('../lib/driveGateway.js');
+function lettersCore() {
+  if (typeof validateLetterPayload === 'function') {
+    return {
+      buildMetricEvent: buildMetricEvent,
+      canViewLetter: canViewLetter,
+      validateLetterPayload: validateLetterPayload
+    };
+  }
 
-function createLetterRoute(body = {}, deps = {}) {
-  const sheetsGateway = deps.sheetsGateway || null;
-  const driveGateway = deps.driveGateway || driveGatewayLib;
-  const driveFolderId = deps.driveFolderId || body.drive_folder_id || '';
-  const spreadsheetId = deps.spreadsheetId || '';
-  const validation = validateLetterPayload(body);
+  return require('../lib/core.js');
+}
+
+function getDriveGateway(deps) {
+  var options = deps || {};
+  if (options.driveGateway) return options.driveGateway;
+
+  if (typeof uploadImageToDrive === 'function') {
+    return { uploadImageToDrive: uploadImageToDrive };
+  }
+
+  return require('../lib/driveGateway.js');
+}
+
+function createLetterRoute(body, deps) {
+  var payload = body || {};
+  var options = deps || {};
+  var core = lettersCore();
+  var sheetsGateway = options.sheetsGateway || null;
+  var driveGateway = getDriveGateway(options);
+  var driveFolderId = options.driveFolderId || payload.drive_folder_id || '';
+  var spreadsheetId = options.spreadsheetId || '';
+  var validation = core.validateLetterPayload(payload);
+
   if (!validation.ok) {
     return validation;
   }
 
-  const letter = {
-    letter_id: body.letter_id || `l_${Date.now()}`,
-    user_id: body.user_id || '',
-    nickname: body.nickname || '',
-    content: body.content || '',
-    image_file_id: body.image_file_id || '',
-    visibility: body.visibility || 'PUBLIC',
-    phase_created: body.phase_created || '',
-    created_at: body.created_at || new Date().toISOString()
+  var letter = {
+    letter_id: payload.letter_id || 'l_' + Date.now(),
+    user_id: payload.user_id || '',
+    nickname: payload.nickname || '',
+    content: payload.content || '',
+    image_file_id: payload.image_file_id || '',
+    visibility: payload.visibility || 'PUBLIC',
+    phase_created: payload.phase_created || '',
+    created_at: payload.created_at || new Date().toISOString()
   };
 
-  if (body.imageDataUri && driveFolderId) {
-    const uploaded = driveGateway.uploadImageToDrive(
-      body.imageDataUri,
+  if (payload.imageDataUri && driveFolderId) {
+    var uploaded = driveGateway.uploadImageToDrive(
+      payload.imageDataUri,
       driveFolderId,
-      body.imageFilename || `${letter.letter_id}.png`,
-      deps.driveServices || {}
+      payload.imageFilename || letter.letter_id + '.png',
+      options.driveServices || {}
     );
     letter.image_file_id = uploaded.fileId || '';
   }
 
   if (sheetsGateway && spreadsheetId) {
-    sheetsGateway.appendRow('Letters', letter, { spreadsheetId });
+    sheetsGateway.appendRow('Letters', letter, { spreadsheetId: spreadsheetId });
   }
 
   return {
     ok: true,
     message: 'LETTER_CREATED',
-    letter,
-    metric: buildMetricEvent('LETTER_SUBMITTED', { userId: body.user_id || '' })
+    letter: letter,
+    metric: core.buildMetricEvent('LETTER_SUBMITTED', { userId: payload.user_id || '' })
   };
 }
 
-function getMailboxesRoute(letters = [], context = {}, deps = {}) {
-  const sheetsGateway = deps.sheetsGateway || null;
-  const spreadsheetId = deps.spreadsheetId || '';
-  const source = letters.length
-    ? letters
+function getMailboxesRoute(letters, context, deps) {
+  var inputLetters = letters || [];
+  var ctx = context || {};
+  var options = deps || {};
+  var core = lettersCore();
+  var sheetsGateway = options.sheetsGateway || null;
+  var spreadsheetId = options.spreadsheetId || '';
+  var source = inputLetters.length
+    ? inputLetters
     : sheetsGateway && spreadsheetId
-      ? sheetsGateway.getAllRows('Letters', { spreadsheetId })
+      ? sheetsGateway.getAllRows('Letters', { spreadsheetId: spreadsheetId })
       : [];
 
   return {
     ok: true,
-    letters: source.filter((letter) => canViewLetter(letter, context) && letter.visibility === 'PUBLIC'),
-    metric: buildMetricEvent('MAILBOX_VIEW', { userId: context.userId || '' })
+    letters: source.filter(function (letter) {
+      return core.canViewLetter(letter, ctx) && letter.visibility === 'PUBLIC';
+    }),
+    metric: core.buildMetricEvent('MAILBOX_VIEW', { userId: ctx.userId || '' })
   };
 }
 
-function getLetterByIdRoute(letter = null, context = {}, deps = {}) {
-  const sheetsGateway = deps.sheetsGateway || null;
-  const spreadsheetId = deps.spreadsheetId || '';
-  let source = letter;
+function getLetterByIdRoute(letter, context, deps) {
+  var source = letter || null;
+  var ctx = context || {};
+  var options = deps || {};
+  var core = lettersCore();
+  var sheetsGateway = options.sheetsGateway || null;
+  var spreadsheetId = options.spreadsheetId || '';
 
-  if (!source && sheetsGateway && spreadsheetId && context.letterId) {
-    const found = sheetsGateway.findRowBy('Letters', 'letter_id', context.letterId, { spreadsheetId });
+  if (!source && sheetsGateway && spreadsheetId && ctx.letterId) {
+    var found = sheetsGateway.findRowBy('Letters', 'letter_id', ctx.letterId, { spreadsheetId: spreadsheetId });
     source = found ? found.row : null;
   }
 
@@ -75,15 +107,17 @@ function getLetterByIdRoute(letter = null, context = {}, deps = {}) {
     return { ok: false, message: 'LETTER_NOT_FOUND' };
   }
 
-  if (!canViewLetter(source, context)) {
+  if (!core.canViewLetter(source, ctx)) {
     return { ok: false, message: 'FORBIDDEN' };
   }
 
   return { ok: true, letter: source };
 }
 
-module.exports = {
-  createLetterRoute,
-  getLetterByIdRoute,
-  getMailboxesRoute
-};
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    createLetterRoute: createLetterRoute,
+    getLetterByIdRoute: getLetterByIdRoute,
+    getMailboxesRoute: getMailboxesRoute
+  };
+}

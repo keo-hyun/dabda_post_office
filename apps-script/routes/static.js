@@ -1,31 +1,35 @@
-function resolvePath(pathname = '/') {
-  const raw = String(pathname || '/').trim();
+function resolvePath(pathname) {
+  var raw = String(pathname || '/').trim();
 
   if (raw === '' || raw === '/') {
     return '/index.html';
   }
 
-  return raw.startsWith('/') ? raw : `/${raw}`;
+  return raw.startsWith('/') ? raw : '/' + raw;
 }
 
-function resolveRequestPath(event = {}, method = 'GET') {
-  const paramPath = event?.parameter?.path || event?.parameter?.route || '';
-  const pathInfo = event?.pathInfo ? `/${String(event.pathInfo).replace(/^\/+/, '')}` : '';
-  const candidate = paramPath || pathInfo || '/';
+function resolveRequestPath(event, method) {
+  var e = event || {};
+  var m = method || 'GET';
+  var paramPath = (e.parameter && (e.parameter.path || e.parameter.route)) || '';
+  var pathInfo = e.pathInfo ? '/' + String(e.pathInfo).replace(/^\/+/, '') : '';
+  var candidate = paramPath || pathInfo || '/';
 
-  if (method === 'GET') {
+  if (m === 'GET') {
     return resolvePath(candidate);
   }
 
-  return candidate.startsWith('/') ? candidate : `/${candidate}`;
+  return candidate.startsWith('/') ? candidate : '/' + candidate;
 }
 
-function isApiPath(pathname = '') {
-  return String(pathname).startsWith('/api/');
+function isApiPath(pathname) {
+  return String(pathname || '').startsWith('/api/');
 }
 
-module.exports = {
-  isApiPath,
-  resolvePath,
-  resolveRequestPath
-};
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    isApiPath: isApiPath,
+    resolvePath: resolvePath,
+    resolveRequestPath: resolveRequestPath
+  };
+}

@@ -1,59 +1,72 @@
-const {
-  buildUserInsert,
-  validateEntryCode,
-  verifyPassword
-} = require('../../src/backend/core/authCore.js');
-const { buildMetricEvent } = require('../../src/backend/core/metricsCore.js');
-const { resolvePhase } = require('../../src/shared/phase.js');
+function authCore() {
+  if (typeof validateEntryCode === 'function') {
+    return {
+      buildUserInsert: buildUserInsert,
+      buildMetricEvent: buildMetricEvent,
+      resolvePhase: resolvePhase,
+      validateEntryCode: validateEntryCode,
+      verifyPassword: verifyPassword
+    };
+  }
 
-function enterRoute(body = {}, env = {}) {
-  const ok = validateEntryCode(body.entryCode, env.ENTRY_CODE || '');
-  const phase = resolvePhase(env.now ? new Date(env.now) : new Date());
+  return require('../lib/core.js');
+}
 
-  const response = {
-    ok,
-    phase,
+function enterRoute(body, env) {
+  var payload = body || {};
+  var runtime = env || {};
+  var core = authCore();
+  var ok = core.validateEntryCode(payload.entryCode, runtime.ENTRY_CODE || '');
+  var phase = core.resolvePhase(runtime.now ? new Date(runtime.now) : new Date());
+
+  var response = {
+    ok: ok,
+    phase: phase,
     message: ok ? 'ENTRY_OK' : 'INVALID_ENTRY_CODE'
   };
 
   if (ok) {
-    response.metric = buildMetricEvent('ENTRY_SUCCESS', { userId: body.userId || '' });
+    response.metric = core.buildMetricEvent('ENTRY_SUCCESS', { userId: payload.userId || '' });
   }
 
   return response;
 }
 
-function registerOrLoginRoute(body = {}, existingUser = null, deps = {}) {
-  const nickname = String(body.nickname || '').trim();
-  const password = String(body.password || '');
-  const sheetsGateway = deps.sheetsGateway || null;
-  const spreadsheetId = deps.spreadsheetId || '';
+function registerOrLoginRoute(body, existingUser, deps) {
+  var payload = body || {};
+  var sourceUser = existingUser || null;
+  var options = deps || {};
+  var core = authCore();
+  var nickname = String(payload.nickname || '').trim();
+  var password = String(payload.password || '');
+  var sheetsGateway = options.sheetsGateway || null;
+  var spreadsheetId = options.spreadsheetId || '';
 
   if (!nickname || !password) {
     return { ok: false, message: 'INVALID_PAYLOAD' };
   }
 
-  let candidate = existingUser;
+  var candidate = sourceUser;
   if (!candidate && sheetsGateway && spreadsheetId) {
-    const found = sheetsGateway.findRowBy('Users', 'nickname', nickname, { spreadsheetId });
+    var found = sheetsGateway.findRowBy('Users', 'nickname', nickname, { spreadsheetId: spreadsheetId });
     candidate = found ? found.row : null;
   }
 
   if (!candidate) {
-    const user = buildUserInsert(nickname, password);
+    var user = core.buildUserInsert(nickname, password);
 
     if (sheetsGateway && spreadsheetId) {
-      sheetsGateway.appendRow('Users', user, { spreadsheetId });
+      sheetsGateway.appendRow('Users', user, { spreadsheetId: spreadsheetId });
     }
 
     return {
       ok: true,
       mode: 'REGISTER',
-      user
+      user: user
     };
   }
 
-  const passwordOk = verifyPassword(password, candidate.password_hash);
+  var passwordOk = core.verifyPassword(password, candidate.password_hash);
   if (!passwordOk) {
     return {
       ok: false,
@@ -68,7 +81,7 @@ function registerOrLoginRoute(body = {}, existingUser = null, deps = {}) {
       'nickname',
       nickname,
       { last_login_at: new Date().toISOString() },
-      { spreadsheetId }
+      { spreadsheetId: spreadsheetId }
     );
   }
 
@@ -79,7 +92,9 @@ function registerOrLoginRoute(body = {}, existingUser = null, deps = {}) {
   };
 }
 
-module.exports = {
-  enterRoute,
-  registerOrLoginRoute
-};
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    enterRoute: enterRoute,
+    registerOrLoginRoute: registerOrLoginRoute
+  };
+}

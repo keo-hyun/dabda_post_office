@@ -103,10 +103,12 @@ function updateRowBy(sheetName, column, value, patch = {}, options = {}) {
   };
 }
 
-module.exports = {
-  appendRow,
-  findRowBy,
-  getAllRows,
-  mapHeaderRow,
-  updateRowBy
-};
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    appendRow,
+    findRowBy,
+    getAllRows,
+    mapHeaderRow,
+    updateRowBy
+  };
+}
