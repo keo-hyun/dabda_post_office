@@ -114,95 +114,118 @@ function renderStatic(path) {
   return HtmlService.createHtmlOutput(html);
 }
 
+function routeErrorResponse(error) {
+  var message = (error && error.message) || 'INTERNAL_ERROR';
+  return jsonResponse({ ok: false, message: String(message) });
+}
+
 function doPost(event) {
-  var routes = routeFns();
-  var path = routes.resolveRequestPath(event, 'POST');
-  var body = parseBody(event);
-  var props = readScriptProperties();
-  var deps = buildRouteDeps();
+  try {
+    var routes = routeFns();
+    var path = routes.resolveRequestPath(event, 'POST');
+    var body = parseBody(event);
+    var props = readScriptProperties();
+    var deps = buildRouteDeps();
 
-  if (path === '/api/enter') {
-    return jsonResponse(
-      routes.enterRoute(body, { ENTRY_CODE: props.ENTRY_CODE || '', PHASE_MODE: props.PHASE_MODE || '', now: props.NOW || '' })
-    );
+    if (path === '/api/enter') {
+      return jsonResponse(
+        routes.enterRoute(body, { ENTRY_CODE: props.ENTRY_CODE || '', PHASE_MODE: props.PHASE_MODE || '', now: props.NOW || '' })
+      );
+    }
+
+    if (path === '/api/register-or-login') {
+      return jsonResponse(routes.registerOrLoginRoute(body, null, deps));
+    }
+
+    if (path === '/api/letters') {
+      return jsonResponse(routes.createLetterRoute(body, deps));
+    }
+
+    if (path === '/api/comments') {
+      return jsonResponse(routes.createCommentRoute(body, deps));
+    }
+
+    if (path === '/api/admin/report-action') {
+      return jsonResponse(routes.reportActionRoute(body, 'admin', deps));
+    }
+
+    return jsonResponse({ ok: false, message: 'NOT_FOUND' });
+  } catch (error) {
+    return routeErrorResponse(error);
   }
-
-  if (path === '/api/register-or-login') {
-    return jsonResponse(routes.registerOrLoginRoute(body, null, deps));
-  }
-
-  if (path === '/api/letters') {
-    return jsonResponse(routes.createLetterRoute(body, deps));
-  }
-
-  if (path === '/api/comments') {
-    return jsonResponse(routes.createCommentRoute(body, deps));
-  }
-
-  if (path === '/api/admin/report-action') {
-    return jsonResponse(routes.reportActionRoute(body, 'admin', deps));
-  }
-
-  return jsonResponse({ ok: false, message: 'NOT_FOUND' });
 }
 
 function doGet(event) {
-  var routes = routeFns();
-  var path = routes.resolveRequestPath(event, 'GET');
-  var props = readScriptProperties();
-  var deps = buildRouteDeps();
+  try {
+    var routes = routeFns();
+    var path = routes.resolveRequestPath(event, 'GET');
+    var props = readScriptProperties();
+    var deps = buildRouteDeps();
 
-  if (!routes.isApiPath(path)) {
-    return renderStatic(path);
+    if (!routes.isApiPath(path)) {
+      return renderStatic(path);
+    }
+
+    if (path === '/api/phase') {
+      return jsonResponse(routes.phaseRoute({ PHASE_MODE: props.PHASE_MODE || '', now: props.NOW || '' }));
+    }
+
+    if (path === '/api/mailboxes') {
+      return jsonResponse(routes.getMailboxesRoute([], { phase: 'PHASE_2' }, deps));
+    }
+
+    if (path.indexOf('/api/letters/') === 0) {
+      var letterId = path.replace('/api/letters/', '');
+      return jsonResponse(routes.getLetterByIdRoute(null, { letterId: letterId }, deps));
+    }
+
+    return jsonResponse({ ok: false, message: 'NOT_FOUND' });
+  } catch (error) {
+    return routeErrorResponse(error);
   }
-
-  if (path === '/api/phase') {
-    return jsonResponse(routes.phaseRoute({ PHASE_MODE: props.PHASE_MODE || '', now: props.NOW || '' }));
-  }
-
-  if (path === '/api/mailboxes') {
-    return jsonResponse(routes.getMailboxesRoute([], { phase: 'PHASE_2' }, deps));
-  }
-
-  if (path.indexOf('/api/letters/') === 0) {
-    var letterId = path.replace('/api/letters/', '');
-    return jsonResponse(routes.getLetterByIdRoute(null, { letterId: letterId }, deps));
-  }
-
-  return jsonResponse({ ok: false, message: 'NOT_FOUND' });
 }
 
 function doPatch(event) {
-  var routes = routeFns();
-  var path = routes.resolveRequestPath(event, 'PATCH');
-  var body = parseBody(event);
-  var deps = buildRouteDeps();
+  try {
+    var routes = routeFns();
+    var path = routes.resolveRequestPath(event, 'PATCH');
+    var body = parseBody(event);
+    var deps = buildRouteDeps();
 
-  if (path.indexOf('/api/comments/') === 0) {
-    var commentId = path.replace('/api/comments/', '');
-    return jsonResponse(routes.updateCommentRoute(null, Object.assign({}, body, { comment_id: commentId }), {}, deps));
+    if (path.indexOf('/api/comments/') === 0) {
+      var commentId = path.replace('/api/comments/', '');
+      return jsonResponse(routes.updateCommentRoute(null, Object.assign({}, body, { comment_id: commentId }), {}, deps));
+    }
+
+    return jsonResponse({ ok: false, message: 'NOT_FOUND' });
+  } catch (error) {
+    return routeErrorResponse(error);
   }
-
-  return jsonResponse({ ok: false, message: 'NOT_FOUND' });
 }
 
 function doDelete(event) {
-  var routes = routeFns();
-  var path = routes.resolveRequestPath(event, 'DELETE');
-  var body = parseBody(event);
-  var deps = buildRouteDeps();
+  try {
+    var routes = routeFns();
+    var path = routes.resolveRequestPath(event, 'DELETE');
+    var body = parseBody(event);
+    var deps = buildRouteDeps();
 
-  if (path.indexOf('/api/admin/comments/') === 0) {
-    var adminCommentId = path.replace('/api/admin/comments/', '');
-    return jsonResponse(routes.adminDeleteCommentRoute(null, 'admin', Object.assign({}, deps, { commentId: adminCommentId })));
+    if (path.indexOf('/api/admin/comments/') === 0) {
+      var adminCommentId = path.replace('/api/admin/comments/', '');
+      return jsonResponse(
+        routes.adminDeleteCommentRoute(null, 'admin', Object.assign({}, deps, { commentId: adminCommentId }))
+      );
+    }
+
+    if (path.indexOf('/api/comments/') === 0) {
+      var commentId = path.replace('/api/comments/', '');
+      return jsonResponse(routes.deleteCommentRoute(null, Object.assign({}, body, { comment_id: commentId }), {}, deps));
+    }
+
+    return jsonResponse({ ok: false, message: 'NOT_FOUND' });
+  } catch (error) {
+    return routeErrorResponse(error);
   }
-
-  if (path.indexOf('/api/comments/') === 0) {
-    var commentId = path.replace('/api/comments/', '');
-    return jsonResponse(routes.deleteCommentRoute(null, Object.assign({}, body, { comment_id: commentId }), {}, deps));
-  }
-
-  return jsonResponse({ ok: false, message: 'NOT_FOUND' });
 }
 
 if (typeof module !== 'undefined' && module.exports) {
