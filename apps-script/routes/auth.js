@@ -17,7 +17,7 @@ function enterRoute(body, env) {
   var runtime = env || {};
   var core = authCore();
   var ok = core.validateEntryCode(payload.entryCode, runtime.ENTRY_CODE || '');
-  var phase = core.resolvePhase(runtime.now ? new Date(runtime.now) : new Date());
+  var phase = core.resolvePhase(runtime.now ? new Date(runtime.now) : new Date(), runtime.PHASE_MODE || '');
 
   var response = {
     ok: ok,

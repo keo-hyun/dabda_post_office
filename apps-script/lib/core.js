@@ -42,7 +42,21 @@ function buildUserInsert(nickname, password) {
   };
 }
 
-function resolvePhase(date) {
+function normalizePhaseMode(mode) {
+  var raw = String(mode || '').trim().toUpperCase();
+  if (raw === 'PHASE_1' || raw === 'TRANSITION' || raw === 'PHASE_2' || raw === 'CLOSED') {
+    return raw;
+  }
+
+  return '';
+}
+
+function resolvePhase(date, phaseMode) {
+  var override = normalizePhaseMode(phaseMode);
+  if (override) {
+    return override;
+  }
+
   var target = date || new Date();
   var time = target.getTime();
   var windows = [

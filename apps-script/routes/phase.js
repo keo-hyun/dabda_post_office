@@ -5,7 +5,7 @@ function phaseRoute(env) {
 
   return {
     ok: true,
-    phase: phaseResolver(now)
+    phase: phaseResolver(now, runtime.PHASE_MODE || '')
   };
 }
 

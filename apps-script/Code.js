@@ -122,7 +122,9 @@ function doPost(event) {
   var deps = buildRouteDeps();
 
   if (path === '/api/enter') {
-    return jsonResponse(routes.enterRoute(body, { ENTRY_CODE: props.ENTRY_CODE || '', now: props.NOW || '' }));
+    return jsonResponse(
+      routes.enterRoute(body, { ENTRY_CODE: props.ENTRY_CODE || '', PHASE_MODE: props.PHASE_MODE || '', now: props.NOW || '' })
+    );
   }
 
   if (path === '/api/register-or-login') {
@@ -147,6 +149,7 @@ function doPost(event) {
 function doGet(event) {
   var routes = routeFns();
   var path = routes.resolveRequestPath(event, 'GET');
+  var props = readScriptProperties();
   var deps = buildRouteDeps();
 
   if (!routes.isApiPath(path)) {
@@ -154,7 +157,7 @@ function doGet(event) {
   }
 
   if (path === '/api/phase') {
-    return jsonResponse(routes.phaseRoute());
+    return jsonResponse(routes.phaseRoute({ PHASE_MODE: props.PHASE_MODE || '', now: props.NOW || '' }));
   }
 
   if (path === '/api/mailboxes') {
