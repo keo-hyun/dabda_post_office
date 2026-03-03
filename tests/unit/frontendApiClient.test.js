@@ -44,7 +44,10 @@ describe('frontend api client', () => {
     expect(result.ok).toBe(true);
     expect(globalThis.fetch).toHaveBeenCalledWith(
       `${GAS_WEB_APP_URL}?path=%2Fapi%2Fenter`,
-      expect.objectContaining({ method: 'POST' })
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' }
+      })
     );
   });
 });
