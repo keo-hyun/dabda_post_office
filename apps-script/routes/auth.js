@@ -19,31 +19,65 @@ function enterRoute(body = {}, env = {}) {
   return response;
 }
 
-function registerOrLoginRoute(body = {}, existingUser = null) {
+function registerOrLoginRoute(body = {}, existingUser = null, deps = {}) {
   const nickname = String(body.nickname || '').trim();
   const password = String(body.password || '');
+  const sheetsGateway = deps.sheetsGateway || null;
+  const spreadsheetId = deps.spreadsheetId || '';
 
   if (!nickname || !password) {
     return { ok: false, message: 'INVALID_PAYLOAD' };
   }
 
-  if (!existingUser) {
+  let candidate = existingUser;
+  if (!candidate && sheetsGateway && spreadsheetId) {
+    const found = sheetsGateway.findRowBy('Users', 'nickname', nickname, { spreadsheetId });
+    candidate = found ? found.row : null;
+  }
+
+  if (!candidate) {
+    const user = {
+      user_id: `u_${Date.now()}`,
+      nickname,
+      password_hash: hashPassword(password),
+      created_at: new Date().toISOString(),
+      last_login_at: new Date().toISOString()
+    };
+
+    if (sheetsGateway && spreadsheetId) {
+      sheetsGateway.appendRow('Users', user, { spreadsheetId });
+    }
+
     return {
       ok: true,
       mode: 'REGISTER',
-      user: {
-        nickname,
-        password_hash: hashPassword(password)
-      }
+      user
     };
   }
 
-  const passwordOk = verifyPassword(password, existingUser.password_hash);
+  const passwordOk = verifyPassword(password, candidate.password_hash);
+  if (!passwordOk) {
+    return {
+      ok: false,
+      mode: 'LOGIN',
+      message: 'INVALID_PASSWORD'
+    };
+  }
+
+  if (sheetsGateway && spreadsheetId) {
+    sheetsGateway.updateRowBy(
+      'Users',
+      'nickname',
+      nickname,
+      { last_login_at: new Date().toISOString() },
+      { spreadsheetId }
+    );
+  }
 
   return {
-    ok: passwordOk,
+    ok: true,
     mode: 'LOGIN',
-    message: passwordOk ? 'LOGIN_OK' : 'INVALID_PASSWORD'
+    message: 'LOGIN_OK'
   };
 }
 
