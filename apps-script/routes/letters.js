@@ -1,8 +1,11 @@
 const { canViewLetter, validateLetterPayload } = require('../../src/backend/core/lettersCore.js');
 const { buildMetricEvent } = require('../../src/backend/core/metricsCore.js');
+const driveGatewayLib = require('../lib/driveGateway.js');
 
 function createLetterRoute(body = {}, deps = {}) {
   const sheetsGateway = deps.sheetsGateway || null;
+  const driveGateway = deps.driveGateway || driveGatewayLib;
+  const driveFolderId = deps.driveFolderId || body.drive_folder_id || '';
   const spreadsheetId = deps.spreadsheetId || '';
   const validation = validateLetterPayload(body);
   if (!validation.ok) {
@@ -19,6 +22,16 @@ function createLetterRoute(body = {}, deps = {}) {
     phase_created: body.phase_created || '',
     created_at: body.created_at || new Date().toISOString()
   };
+
+  if (body.imageDataUri && driveFolderId) {
+    const uploaded = driveGateway.uploadImageToDrive(
+      body.imageDataUri,
+      driveFolderId,
+      body.imageFilename || `${letter.letter_id}.png`,
+      deps.driveServices || {}
+    );
+    letter.image_file_id = uploaded.fileId || '';
+  }
 
   if (sheetsGateway && spreadsheetId) {
     sheetsGateway.appendRow('Letters', letter, { spreadsheetId });
