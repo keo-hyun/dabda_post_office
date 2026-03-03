@@ -1,4 +1,8 @@
-const { validateEntryCode, hashPassword, verifyPassword } = require('../../src/backend/core/authCore.js');
+const {
+  buildUserInsert,
+  validateEntryCode,
+  verifyPassword
+} = require('../../src/backend/core/authCore.js');
 const { buildMetricEvent } = require('../../src/backend/core/metricsCore.js');
 const { resolvePhase } = require('../../src/shared/phase.js');
 
@@ -36,13 +40,7 @@ function registerOrLoginRoute(body = {}, existingUser = null, deps = {}) {
   }
 
   if (!candidate) {
-    const user = {
-      user_id: `u_${Date.now()}`,
-      nickname,
-      password_hash: hashPassword(password),
-      created_at: new Date().toISOString(),
-      last_login_at: new Date().toISOString()
-    };
+    const user = buildUserInsert(nickname, password);
 
     if (sheetsGateway && spreadsheetId) {
       sheetsGateway.appendRow('Users', user, { spreadsheetId });
