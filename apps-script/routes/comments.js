@@ -1,5 +1,6 @@
 const { hashPassword, verifyPassword } = require('../../src/backend/core/authCore.js');
 const { canEditComment, softDeleteComment } = require('../../src/backend/core/commentsCore.js');
+const { buildMetricEvent } = require('../../src/backend/core/metricsCore.js');
 
 function createCommentRoute(body = {}) {
   const nickname = String(body.nickname || '').trim();
@@ -21,7 +22,8 @@ function createCommentRoute(body = {}) {
       created_at: new Date().toISOString(),
       updated_at: null,
       deleted_at: null
-    }
+    },
+    metric: buildMetricEvent('COMMENT_CREATED', { userId: body.user_id || '' })
   };
 }
 
@@ -41,7 +43,8 @@ function updateCommentRoute(comment = null, body = {}, context = {}) {
       ...comment,
       content: String(body.content || comment.content),
       updated_at: new Date().toISOString()
-    }
+    },
+    metric: buildMetricEvent('COMMENT_UPDATED', { userId: body.user_id || '' })
   };
 }
 
@@ -57,7 +60,8 @@ function deleteCommentRoute(comment = null, body = {}, context = {}) {
 
   return {
     ok: true,
-    comment: softDeleteComment(comment)
+    comment: softDeleteComment(comment),
+    metric: buildMetricEvent('COMMENT_DELETED', { userId: body.user_id || '' })
   };
 }
 

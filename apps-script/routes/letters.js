@@ -1,4 +1,5 @@
 const { canViewLetter, validateLetterPayload } = require('../../src/backend/core/lettersCore.js');
+const { buildMetricEvent } = require('../../src/backend/core/metricsCore.js');
 
 function createLetterRoute(body = {}) {
   const validation = validateLetterPayload(body);
@@ -6,13 +7,18 @@ function createLetterRoute(body = {}) {
     return validation;
   }
 
-  return { ok: true, message: 'LETTER_CREATED' };
+  return {
+    ok: true,
+    message: 'LETTER_CREATED',
+    metric: buildMetricEvent('LETTER_SUBMITTED', { userId: body.user_id || '' })
+  };
 }
 
 function getMailboxesRoute(letters = [], context = {}) {
   return {
     ok: true,
-    letters: letters.filter((letter) => canViewLetter(letter, context) && letter.visibility === 'PUBLIC')
+    letters: letters.filter((letter) => canViewLetter(letter, context) && letter.visibility === 'PUBLIC'),
+    metric: buildMetricEvent('MAILBOX_VIEW', { userId: context.userId || '' })
   };
 }
 

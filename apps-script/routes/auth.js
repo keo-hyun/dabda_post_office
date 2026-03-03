@@ -1,15 +1,22 @@
 const { validateEntryCode, hashPassword, verifyPassword } = require('../../src/backend/core/authCore.js');
+const { buildMetricEvent } = require('../../src/backend/core/metricsCore.js');
 const { resolvePhase } = require('../../src/shared/phase.js');
 
 function enterRoute(body = {}, env = {}) {
   const ok = validateEntryCode(body.entryCode, env.ENTRY_CODE || '');
   const phase = resolvePhase(env.now ? new Date(env.now) : new Date());
 
-  return {
+  const response = {
     ok,
     phase,
     message: ok ? 'ENTRY_OK' : 'INVALID_ENTRY_CODE'
   };
+
+  if (ok) {
+    response.metric = buildMetricEvent('ENTRY_SUCCESS', { userId: body.userId || '' });
+  }
+
+  return response;
 }
 
 function registerOrLoginRoute(body = {}, existingUser = null) {
