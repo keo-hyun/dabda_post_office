@@ -96,11 +96,14 @@ async function onSubmitLetter(payload) {
 
 function render() {
   if (!root) return;
+  const shouldRestoreEntryFocus = document.activeElement?.id === 'entryCode';
 
   if (state.screen === 'ENTRY') {
     renderEntryView(root, state, {
       onEntryCodeChange: (value) => dispatch({ type: 'SET_ENTRY_CODE', value }),
       onEnter
+    }, {
+      restoreInputFocus: shouldRestoreEntryFocus
     });
     return;
   }
