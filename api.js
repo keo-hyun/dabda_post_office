@@ -25,12 +25,19 @@ function readPhaseOverride() {
 
 async function requestJson(path, options = {}) {
   const response = await fetch(path, options);
+  let payload = null;
 
-  if (!response.ok) {
-    throw new Error('요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.');
+  try {
+    payload = await response.json();
+  } catch (error) {
+    payload = null;
   }
 
-  return response.json();
+  if (!response.ok) {
+    throw new Error(payload?.message || '요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.');
+  }
+
+  return payload || { ok: true };
 }
 
 function mockApi() {
@@ -107,6 +114,11 @@ function realApi() {
 }
 
 export function createApiClient() {
-  const useReal = typeof window !== 'undefined' && window.__DABDA_USE_REAL_API__ === true;
+  const runtimeFlag = typeof window !== 'undefined' ? window.__DABDA_USE_REAL_API__ : undefined;
+  const isLocal =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
+  const useReal = runtimeFlag !== false && (runtimeFlag === true || !isLocal);
+
   return useReal ? realApi() : mockApi();
 }
