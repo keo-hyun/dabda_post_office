@@ -119,6 +119,25 @@ function routeErrorResponse(error) {
   return jsonResponse({ ok: false, message: String(message) });
 }
 
+function persistMetricIfPresent(response, deps) {
+  var payload = response || {};
+  var options = deps || {};
+  var sheetsGateway = options.sheetsGateway || null;
+  var spreadsheetId = options.spreadsheetId || '';
+
+  if (!payload.metric || !sheetsGateway || !spreadsheetId) {
+    return payload;
+  }
+
+  try {
+    sheetsGateway.appendRow('Metrics', payload.metric, { spreadsheetId: spreadsheetId });
+  } catch (error) {
+    // Metrics persistence is best-effort and must not block main API flow.
+  }
+
+  return payload;
+}
+
 function doPost(event) {
   try {
     var routes = routeFns();
@@ -128,9 +147,12 @@ function doPost(event) {
     var deps = buildRouteDeps();
 
     if (path === '/api/enter') {
-      return jsonResponse(
-        routes.enterRoute(body, { ENTRY_CODE: props.ENTRY_CODE || '', PHASE_MODE: props.PHASE_MODE || '', now: props.NOW || '' })
-      );
+      var enterResult = routes.enterRoute(body, {
+        ENTRY_CODE: props.ENTRY_CODE || '',
+        PHASE_MODE: props.PHASE_MODE || '',
+        now: props.NOW || ''
+      });
+      return jsonResponse(persistMetricIfPresent(enterResult, deps));
     }
 
     if (path === '/api/register-or-login') {
@@ -138,11 +160,11 @@ function doPost(event) {
     }
 
     if (path === '/api/letters') {
-      return jsonResponse(routes.createLetterRoute(body, deps));
+      return jsonResponse(persistMetricIfPresent(routes.createLetterRoute(body, deps), deps));
     }
 
     if (path === '/api/comments') {
-      return jsonResponse(routes.createCommentRoute(body, deps));
+      return jsonResponse(persistMetricIfPresent(routes.createCommentRoute(body, deps), deps));
     }
 
     if (path === '/api/admin/report-action') {
@@ -171,7 +193,7 @@ function doGet(event) {
     }
 
     if (path === '/api/mailboxes') {
-      return jsonResponse(routes.getMailboxesRoute([], { phase: 'PHASE_2' }, deps));
+      return jsonResponse(persistMetricIfPresent(routes.getMailboxesRoute([], { phase: 'PHASE_2' }, deps), deps));
     }
 
     if (path.indexOf('/api/letters/') === 0) {
@@ -195,7 +217,9 @@ function doPatch(event) {
 
     if (path.indexOf('/api/comments/') === 0) {
       var commentId = path.replace('/api/comments/', '');
-      return jsonResponse(routes.updateCommentRoute(null, Object.assign({}, body, { comment_id: commentId }), {}, deps));
+      return jsonResponse(
+        persistMetricIfPresent(routes.updateCommentRoute(null, Object.assign({}, body, { comment_id: commentId }), {}, deps), deps)
+      );
     }
 
     return jsonResponse({ ok: false, message: 'NOT_FOUND' });
@@ -220,7 +244,9 @@ function doDelete(event) {
 
     if (path.indexOf('/api/comments/') === 0) {
       var commentId = path.replace('/api/comments/', '');
-      return jsonResponse(routes.deleteCommentRoute(null, Object.assign({}, body, { comment_id: commentId }), {}, deps));
+      return jsonResponse(
+        persistMetricIfPresent(routes.deleteCommentRoute(null, Object.assign({}, body, { comment_id: commentId }), {}, deps), deps)
+      );
     }
 
     return jsonResponse({ ok: false, message: 'NOT_FOUND' });
