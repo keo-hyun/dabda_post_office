@@ -80,6 +80,10 @@ function mockApi() {
     async createComment(letterId, payload) {
       const letter = mockDb.letters.find((item) => item.letter_id === letterId);
       if (!letter) return { ok: false, message: '편지를 찾을 수 없어요.' };
+      const password = String(payload.password || '').trim();
+      if (!password) {
+        return { ok: false, message: '댓글 비밀번호를 입력해 주세요.' };
+      }
       const comment = {
         comment_id: `comment-${Date.now()}`,
         nickname: payload.nickname || '방문자',

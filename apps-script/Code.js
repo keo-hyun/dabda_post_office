@@ -176,7 +176,8 @@ function doGet(event) {
 
     if (path.indexOf('/api/letters/') === 0) {
       var letterId = path.replace('/api/letters/', '');
-      return jsonResponse(routes.getLetterByIdRoute(null, { letterId: letterId }, deps));
+      var phaseResult = routes.phaseRoute({ PHASE_MODE: props.PHASE_MODE || '', now: props.NOW || '' });
+      return jsonResponse(routes.getLetterByIdRoute(null, { letterId: letterId, phase: phaseResult.phase }, deps));
     }
 
     return jsonResponse({ ok: false, message: 'NOT_FOUND' });
