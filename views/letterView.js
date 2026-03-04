@@ -22,6 +22,8 @@ export function renderLetterView(container, state, handlers) {
       <form id="commentForm" class="stack">
         <label for="commentNickname">닉네임</label>
         <input id="commentNickname" required ${disabled} />
+        <label for="commentPassword">댓글 비밀번호</label>
+        <input id="commentPassword" type="password" required ${disabled} />
         <label for="commentContent">댓글</label>
         <textarea id="commentContent" rows="3" required ${disabled}></textarea>
         <button type="submit" ${disabled}>댓글 남기기</button>
@@ -34,6 +36,7 @@ export function renderLetterView(container, state, handlers) {
     event.preventDefault();
     handlers.onSubmitComment({
       nickname: container.querySelector('#commentNickname').value,
+      password: container.querySelector('#commentPassword').value,
       content: container.querySelector('#commentContent').value
     });
   });
