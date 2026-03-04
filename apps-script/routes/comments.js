@@ -19,10 +19,9 @@ function createCommentRoute(body, deps) {
   var sheetsGateway = options.sheetsGateway || null;
   var spreadsheetId = options.spreadsheetId || '';
   var nickname = String(payload.nickname || '').trim();
-  var password = String(payload.password || '');
   var content = String(payload.content || '').trim();
 
-  if (!payload.letter_id || !nickname || !password || !content) {
+  if (!payload.letter_id || !nickname || !content) {
     return { ok: false, message: 'INVALID_PAYLOAD' };
   }
 
@@ -30,7 +29,7 @@ function createCommentRoute(body, deps) {
     comment_id: payload.comment_id || 'c_' + Date.now(),
     letter_id: payload.letter_id,
     nickname: nickname,
-    password_hash: core.hashPassword(password),
+    password_hash: payload.password_hash || '',
     content: content,
     created_at: new Date().toISOString(),
     updated_at: null,

@@ -51,7 +51,7 @@ describe('frontend api client', () => {
     );
   });
 
-  it('requires password when creating comment in mock mode', async () => {
+  it('requires nickname only when creating comment in mock mode', async () => {
     globalThis.window = {
       location: {
         hostname: '127.0.0.1',
@@ -61,19 +61,17 @@ describe('frontend api client', () => {
     globalThis.fetch = vi.fn();
 
     const api = createApiClient();
-    const missingPassword = await api.createComment('letter-1', {
+    const withNickname = await api.createComment('letter-1', {
       nickname: '테스터',
       content: '댓글 테스트'
     });
 
-    expect(missingPassword.ok).toBe(false);
+    expect(withNickname.ok).toBe(true);
 
-    const withPassword = await api.createComment('letter-1', {
-      nickname: '테스터',
-      password: '1234',
+    const missingNickname = await api.createComment('letter-1', {
       content: '댓글 테스트'
     });
 
-    expect(withPassword.ok).toBe(true);
+    expect(missingNickname.ok).toBe(false);
   });
 });

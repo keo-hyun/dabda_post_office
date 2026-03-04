@@ -30,15 +30,20 @@ function createLetterRoute(body, deps) {
   var driveFolderId = options.driveFolderId || payload.drive_folder_id || '';
   var spreadsheetId = options.spreadsheetId || '';
   var validation = core.validateLetterPayload(payload);
+  var nickname = String(payload.nickname || '').trim();
 
   if (!validation.ok) {
     return validation;
   }
 
+  if (!nickname) {
+    return { ok: false, message: 'INVALID_PAYLOAD' };
+  }
+
   var letter = {
     letter_id: payload.letter_id || 'l_' + Date.now(),
     user_id: payload.user_id || '',
-    nickname: payload.nickname || '',
+    nickname: nickname,
     content: payload.content || '',
     image_file_id: payload.image_file_id || '',
     visibility: payload.visibility || 'PUBLIC',
