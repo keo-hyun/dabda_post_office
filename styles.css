@@ -55,6 +55,18 @@ h3 {
   gap: 10px;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 label {
   font-size: 0.92rem;
   color: var(--muted);
@@ -139,6 +151,62 @@ button.ghost {
   padding: 12px;
 }
 
+.letter-paper-stage {
+  position: relative;
+  width: min(100%, 560px);
+  aspect-ratio: 2 / 3;
+  margin: 0 auto 6px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(31, 42, 42, 0.12);
+}
+
+.letter-paper-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.letter-paper-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.letter-paper-nickname,
+.letter-paper-content {
+  position: absolute;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #2b2419;
+  font-weight: 500;
+}
+
+.letter-paper-nickname {
+  top: 12%;
+  left: 12%;
+  width: 40%;
+  padding: 6px 8px;
+}
+
+.letter-paper-content {
+  top: 24%;
+  left: 10%;
+  width: 80%;
+  height: 62%;
+  padding: 8px 10px;
+  resize: none;
+  line-height: 1.72;
+  letter-spacing: 0.01em;
+}
+
+.letter-paper-nickname:focus,
+.letter-paper-content:focus {
+  outline: 2px solid rgba(15, 118, 110, 0.4);
+  border-radius: 8px;
+}
+
 @media (max-width: 640px) {
   .page {
     padding: 24px 14px 32px;
@@ -146,5 +214,13 @@ button.ghost {
 
   .card {
     padding: 20px;
+  }
+
+  .letter-paper-stage {
+    border-radius: 14px;
+  }
+
+  .letter-paper-content {
+    line-height: 1.65;
   }
 }
