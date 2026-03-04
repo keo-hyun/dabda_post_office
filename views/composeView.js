@@ -5,6 +5,8 @@ export function renderComposeView(container, state, handlers) {
       <p class="eyebrow">PHASE 1</p>
       <h2>편지 보내기</h2>
       <form id="composeForm" class="stack">
+        <label for="letterNickname">작성자</label>
+        <input id="letterNickname" required ${disabled} />
         <label for="letterContent">편지 내용</label>
         <textarea id="letterContent" maxlength="1000" rows="7" required ${disabled}></textarea>
         <label for="letterVisibility">공개 설정</label>
@@ -23,6 +25,7 @@ export function renderComposeView(container, state, handlers) {
   container.querySelector('#composeForm').addEventListener('submit', (event) => {
     event.preventDefault();
     handlers.onSubmitLetter({
+      nickname: container.querySelector('#letterNickname').value,
       content: container.querySelector('#letterContent').value,
       visibility: container.querySelector('#letterVisibility').value
     });
