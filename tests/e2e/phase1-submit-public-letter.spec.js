@@ -6,6 +6,10 @@ test('phase1: user can submit public letter', async ({ page }) => {
   await page.getByRole('button', { name: '입장하기' }).click();
   await expect(page.getByText('편지 보내기')).toBeVisible();
   await expect(page.locator('.letter-paper-stage')).toBeVisible();
+  const containerType = await page.locator('.letter-paper-stage').evaluate((element) => {
+    return getComputedStyle(element).containerType;
+  });
+  expect(containerType).toBe('size');
 
   await page.getByLabel('작성자').fill('다답이');
   await page.getByLabel('편지 내용').fill('테스트 편지');
