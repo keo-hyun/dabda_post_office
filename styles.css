@@ -16,6 +16,8 @@
 body {
   margin: 0;
   min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   font-family: 'Space Grotesk', 'Noto Sans KR', 'Pretendard', sans-serif;
   color: var(--ink);
   background: radial-gradient(circle at 20% 10%, #ffd8a8 0%, transparent 45%),
@@ -155,10 +157,19 @@ button.ghost {
   position: relative;
   width: min(100%, 560px);
   aspect-ratio: 2 / 3;
+  container-type: size;
   margin: 0 auto 6px;
   border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(31, 42, 42, 0.12);
+  --paper-left: 10.1cqw;
+  --paper-right: 10.1cqw;
+  --author-top: 13.2cqh;
+  --author-width: 42cqw;
+  --content-top: 24.4cqh;
+  --content-bottom: 9.2cqh;
+  --text-size: 2.08cqh;
+  --line-step: 4.04cqh;
 }
 
 .letter-paper-image {
@@ -180,24 +191,30 @@ button.ghost {
   background: transparent;
   box-shadow: none;
   color: #2b2419;
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', 'Apple SD Gothic Neo', serif;
   font-weight: 500;
 }
 
 .letter-paper-nickname {
-  top: 12%;
-  left: 12%;
-  width: 40%;
-  padding: 6px 8px;
+  top: var(--author-top);
+  left: var(--paper-left);
+  width: var(--author-width);
+  padding: 0;
+  font-size: calc(var(--text-size) * 1.02);
+  line-height: calc(var(--line-step) * 0.92);
 }
 
 .letter-paper-content {
-  top: 24%;
-  left: 10%;
-  width: 80%;
-  height: 62%;
-  padding: 8px 10px;
+  top: var(--content-top);
+  left: var(--paper-left);
+  right: var(--paper-right);
+  bottom: var(--content-bottom);
+  width: auto;
+  height: auto;
+  padding: 0;
   resize: none;
-  line-height: 1.72;
+  font-size: var(--text-size);
+  line-height: var(--line-step);
   letter-spacing: 0.01em;
 }
 
@@ -221,6 +238,44 @@ button.ghost {
   }
 
   .letter-paper-content {
-    line-height: 1.65;
+    letter-spacing: 0;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .letter-paper-stage {
+    --text-size: 2.14cqh;
+    --line-step: 4.08cqh;
+    --content-top: 24.5cqh;
+  }
+}
+
+@media (max-width: 375px) {
+  .letter-paper-stage {
+    --author-top: 13.4cqh;
+    --content-top: 24.8cqh;
+    --content-bottom: 9.5cqh;
+    --text-size: 2.18cqh;
+    --line-step: 4.18cqh;
+  }
+}
+
+@media (min-width: 376px) and (max-width: 400px) {
+  .letter-paper-stage {
+    --author-top: 13.2cqh;
+    --content-top: 24.4cqh;
+    --content-bottom: 9.3cqh;
+    --text-size: 2.12cqh;
+    --line-step: 4.1cqh;
+  }
+}
+
+@media (min-width: 401px) and (max-width: 430px) {
+  .letter-paper-stage {
+    --author-top: 13.05cqh;
+    --content-top: 24.15cqh;
+    --content-bottom: 9.15cqh;
+    --text-size: 2.05cqh;
+    --line-step: 3.98cqh;
   }
 }
