@@ -1,11 +1,23 @@
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function renderMailboxView(container, state, handlers) {
   const items = state.letters
     .map(
       (letter) => `
         <li>
-          <button type="button" class="letter-button" data-letter-id="${letter.letter_id}">
-            <strong>${letter.nickname}</strong>
-            <span>${letter.content.slice(0, 60)}</span>
+          <button type="button" class="mailbox-post-button" data-letter-id="${letter.letter_id}">
+            <img class="mailbox-post-image" src="./assets/post.png" alt="우체통" loading="lazy" decoding="async" />
+            <span class="mailbox-post-from">
+              <img class="mailbox-post-from-image" src="./assets/From.png" alt="From" loading="lazy" decoding="async" />
+              <strong class="mailbox-post-author">${escapeHtml(letter.nickname || '익명')}</strong>
+            </span>
           </button>
         </li>
       `
@@ -14,7 +26,6 @@ export function renderMailboxView(container, state, handlers) {
 
   container.innerHTML = `
     <section class="card">
-      <p class="eyebrow">PHASE 2</p>
       <h2>우체통 둘러보기</h2>
       ${state.loading ? '<p class="muted">우체통을 불러오는 중...</p>' : ''}
       ${state.error ? `<p class="error">${state.error}</p>` : ''}

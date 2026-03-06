@@ -160,15 +160,18 @@ button.ghost {
   background: #fffefb;
   border: 1px solid #dfe8e3;
   padding: 16px 16px 14px;
+  overflow: hidden;
   box-shadow: 0 10px 30px rgba(31, 42, 42, 0.12);
   --text-size: 1.02rem;
   --line-step: 1.9rem;
+  --guide-line-color: rgba(86, 95, 92, 0.4);
+  --from-image-width: clamp(58px, 16vw, 84px);
 }
 
 .compose-paper-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 12px;
   margin-bottom: 12px;
 }
@@ -184,13 +187,18 @@ button.ghost {
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
-  gap: 2px;
-  margin-top: 14px;
+  gap: 0;
+  margin-top: 44px;
+  margin-left: auto;
+  flex: 0 0 auto;
+  width: clamp(104px, 36%, 202px);
+  min-width: 0;
 }
 
 .compose-from-image {
   display: block;
-  width: clamp(58px, 16vw, 84px);
+  width: var(--from-image-width);
+  flex: 0 0 auto;
   height: auto;
 }
 
@@ -205,9 +213,12 @@ button.ghost {
 }
 
 .compose-author-input {
-  width: clamp(92px, 28vw, 140px);
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: calc(100% - var(--from-image-width));
   border-radius: 0;
-  border-bottom-color: #7c877f;
+  border-bottom-color: var(--guide-line-color);
   padding: 2px 2px 1px;
   font-size: 0.95rem;
   line-height: 1.1;
@@ -226,7 +237,7 @@ button.ghost {
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0 calc(var(--line-step) - 2px),
-    rgba(86, 95, 92, 0.4) calc(var(--line-step) - 2px) calc(var(--line-step) - 1px),
+    var(--guide-line-color) calc(var(--line-step) - 2px) calc(var(--line-step) - 1px),
     transparent calc(var(--line-step) - 1px) var(--line-step)
   );
   background-size: 100% var(--line-step);
@@ -236,6 +247,73 @@ button.ghost {
 .letter-paper-content:focus {
   outline: 2px solid rgba(15, 118, 110, 0.4);
   border-radius: 8px;
+}
+
+.compose-author-readonly {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: calc(100% - var(--from-image-width));
+  padding: 0 2px 1px;
+  border-bottom: 1px solid var(--guide-line-color);
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', 'Apple SD Gothic Neo', serif;
+  font-size: 0.95rem;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.letter-paper-content-readonly {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mailbox-list {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.mailbox-post-button {
+  position: relative;
+  width: 100%;
+  border: 1px solid #dce7e2;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 0;
+  overflow: hidden;
+}
+
+.mailbox-post-button:hover {
+  transform: translateY(-1px);
+}
+
+.mailbox-post-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.mailbox-post-from {
+  position: absolute;
+  right: 8%;
+  bottom: 11%;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  max-width: 56%;
+}
+
+.mailbox-post-from-image {
+  width: clamp(40px, 18vw, 62px);
+  height: auto;
+}
+
+.mailbox-post-author {
+  border-bottom: 1px solid rgba(70, 78, 75, 0.45);
+  padding-bottom: 1px;
+  font-size: 0.86rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (max-width: 640px) {
@@ -252,18 +330,19 @@ button.ghost {
     padding: 14px 12px 12px;
     --text-size: 0.98rem;
     --line-step: 1.82rem;
-  }
-
-  .compose-author-input {
-    width: clamp(86px, 34vw, 130px);
+    --from-image-width: clamp(50px, 17vw, 74px);
   }
 
   .compose-dear-image {
     width: clamp(120px, 46vw, 190px);
   }
 
-  .compose-from-image {
-    width: clamp(50px, 17vw, 74px);
+  .compose-author-input {
+    max-width: calc(100% - var(--from-image-width));
+  }
+
+  .mailbox-list {
+    grid-template-columns: 1fr;
   }
 }
 
