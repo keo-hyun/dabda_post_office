@@ -20,6 +20,7 @@ test('phase2: user can read mailbox and write comment', async ({ page }) => {
   const placement = await page.locator('.mailbox-post-button').first().evaluate((button) => {
     const image = button.querySelector('.mailbox-post-image');
     const author = button.querySelector('.mailbox-post-author');
+    const cardRect = button.getBoundingClientRect();
     const imageRect = image.getBoundingClientRect();
     const authorRect = author.getBoundingClientRect();
     const authorStyle = getComputedStyle(author);
@@ -30,12 +31,19 @@ test('phase2: user can read mailbox and write comment', async ({ page }) => {
           authorRect.right <= imageRect.right &&
           authorRect.top >= imageRect.top &&
           authorRect.bottom <= imageRect.bottom,
-        borderBottomWidth: authorStyle.borderBottomWidth
+        borderBottomWidth: authorStyle.borderBottomWidth,
+        cardRatio: cardRect.height / cardRect.width,
+        authorXRatio: (authorRect.left - imageRect.left) / imageRect.width,
+        authorYRatio: (authorRect.top - imageRect.top) / imageRect.height
       }
     );
   });
   expect(placement.inImage).toBe(true);
   expect(placement.borderBottomWidth).toBe('0px');
+  expect(placement.cardRatio).toBeLessThanOrEqual(1.15);
+  expect(placement.authorXRatio).toBeGreaterThanOrEqual(0.55);
+  expect(placement.authorYRatio).toBeGreaterThanOrEqual(0.5);
+  expect(placement.authorYRatio).toBeLessThanOrEqual(0.8);
   await page.locator('.mailbox-post-button').first().click();
 
   await expect(page.locator('.letter-read-stage')).toBeVisible();
