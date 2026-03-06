@@ -14,20 +14,28 @@ test('phase2: user can read mailbox and write comment', async ({ page }) => {
   expect(gridColumns.split(' ').length).toBeGreaterThanOrEqual(2);
 
   await expect(page.locator('.mailbox-post-button').first()).toBeVisible();
+  await expect(page.locator('.mailbox-post-image').first()).toHaveAttribute('src', /post_2\.png$/);
   await expect(page.locator('.mailbox-post-from-image')).toHaveCount(0);
   await expect(page.locator('.mailbox-post-author').first()).toBeVisible();
-  const inImage = await page.locator('.mailbox-post-button').first().evaluate((button) => {
+  const placement = await page.locator('.mailbox-post-button').first().evaluate((button) => {
+    const image = button.querySelector('.mailbox-post-image');
     const author = button.querySelector('.mailbox-post-author');
-    const buttonRect = button.getBoundingClientRect();
+    const imageRect = image.getBoundingClientRect();
     const authorRect = author.getBoundingClientRect();
+    const authorStyle = getComputedStyle(author);
     return (
-      authorRect.left >= buttonRect.left &&
-      authorRect.right <= buttonRect.right &&
-      authorRect.top >= buttonRect.top &&
-      authorRect.bottom <= buttonRect.bottom
+      {
+        inImage:
+          authorRect.left >= imageRect.left &&
+          authorRect.right <= imageRect.right &&
+          authorRect.top >= imageRect.top &&
+          authorRect.bottom <= imageRect.bottom,
+        borderBottomWidth: authorStyle.borderBottomWidth
+      }
     );
   });
-  expect(inImage).toBe(true);
+  expect(placement.inImage).toBe(true);
+  expect(placement.borderBottomWidth).toBe('0px');
   await page.locator('.mailbox-post-button').first().click();
 
   await expect(page.locator('.letter-read-stage')).toBeVisible();

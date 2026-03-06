@@ -294,18 +294,20 @@ button.ghost {
 
 .mailbox-post-from {
   position: absolute;
-  left: 58%;
-  bottom: 17%;
+  left: 62%;
+  bottom: 22%;
   display: inline-flex;
   align-items: flex-end;
   gap: 0;
-  max-width: 34%;
+  max-width: 28%;
 }
 
 .mailbox-post-author {
-  border-bottom: 1px solid rgba(70, 78, 75, 0.45);
-  padding-bottom: 1px;
-  font-size: 0.86rem;
+  border-bottom: 0;
+  padding-bottom: 0;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: rgba(49, 55, 53, 0.9);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
