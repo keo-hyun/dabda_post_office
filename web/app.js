@@ -1,4 +1,5 @@
 import { createApiClient } from './api.js';
+import { startLoopingAudio } from './audio.js';
 import { initialState, reduceAppState } from './state.js';
 import { renderComposeView } from './views/composeView.js';
 import { renderEntryView } from './views/entryView.js';
@@ -10,6 +11,7 @@ const ENTRY_SESSION_KEY = 'dabda-post-office-entry-phase';
 const api = createApiClient();
 const root = document.getElementById('app');
 let state = { ...initialState };
+startLoopingAudio();
 
 function getSessionStorage() {
   try {

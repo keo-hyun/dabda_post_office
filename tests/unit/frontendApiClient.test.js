@@ -168,4 +168,46 @@ describe('frontend api client', () => {
       expect.objectContaining({ method: 'POST' })
     );
   });
+
+  it('reuses persisted apiBase when query parameter is missing later in same tab session', async () => {
+    const storage = new Map();
+    const sessionStorage = {
+      getItem: vi.fn((key) => (storage.has(key) ? storage.get(key) : null)),
+      setItem: vi.fn((key, value) => storage.set(key, String(value))),
+      removeItem: vi.fn((key) => storage.delete(key))
+    };
+
+    globalThis.window = {
+      location: {
+        hostname: 'keo-hyun.github.io',
+        search: `?apiMode=real&apiBase=${encodeURIComponent(GAS_WEB_APP_URL)}`
+      },
+      sessionStorage
+    };
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, phase: 'PHASE_2', letters: [] })
+    });
+
+    const firstClient = createApiClient();
+    await firstClient.enter('DABDA2026');
+
+    globalThis.window.location.search = '';
+    globalThis.fetch.mockClear();
+
+    const secondClient = createApiClient();
+    await secondClient.enter('DABDA2026');
+
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(
+      1,
+      `${GAS_WEB_APP_URL}?path=%2Fapi%2Fenter`,
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(
+      2,
+      `${GAS_WEB_APP_URL}?path=%2Fapi%2Fmailboxes`,
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
 });
