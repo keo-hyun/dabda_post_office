@@ -119,4 +119,53 @@ describe('frontend api client', () => {
     expect(mailboxes.letters).toHaveLength(1);
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
+
+  it('falls back to redirected googleusercontent base when script.google.com request fails', async () => {
+    globalThis.window = {
+      location: {
+        hostname: 'keo-hyun.github.io',
+        search: `?apiMode=real&apiBase=${encodeURIComponent(GAS_WEB_APP_URL)}`
+      }
+    };
+
+    const redirectedBase =
+      'https://script.googleusercontent.com/macros/echo?user_content_key=test_key&lib=test_lib';
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => {
+          throw new Error('non-json error body');
+        }
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        url: redirectedBase,
+        json: async () => ({ ok: true })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, phase: 'PHASE_1' })
+      });
+
+    const api = createApiClient();
+    const result = await api.enter('DABDA2026');
+
+    expect(result.ok).toBe(true);
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(
+      1,
+      `${GAS_WEB_APP_URL}?path=%2Fapi%2Fenter`,
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(
+      2,
+      GAS_WEB_APP_URL,
+      expect.objectContaining({ method: 'GET' })
+    );
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(
+      3,
+      `${redirectedBase}&path=%2Fapi%2Fenter`,
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
 });
