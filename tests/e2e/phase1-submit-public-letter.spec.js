@@ -9,6 +9,15 @@ test('phase1: user can submit public letter', async ({ page }) => {
   await expect(page.locator('.compose-dear-image')).toBeVisible();
   await expect(page.locator('.compose-from-image')).toBeVisible();
   await expect(page.locator('.letter-paper-image')).toHaveCount(0);
+  const fromLayout = await page.locator('.compose-from-group').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      marginTop: style.marginTop,
+      gap: style.columnGap || style.gap
+    };
+  });
+  expect(parseFloat(fromLayout.marginTop)).toBeGreaterThan(0);
+  expect(parseFloat(fromLayout.gap)).toBeLessThanOrEqual(4);
 
   const lineBackground = await page.locator('.letter-paper-content').evaluate((element) => {
     return getComputedStyle(element).backgroundImage;
