@@ -116,7 +116,28 @@ function getLetterByIdRoute(letter, context, deps) {
     return { ok: false, message: 'FORBIDDEN' };
   }
 
-  return { ok: true, letter: source };
+  var comments = [];
+  if (sheetsGateway && spreadsheetId && source.letter_id) {
+    try {
+      comments = sheetsGateway
+        .getAllRows('Comments', { spreadsheetId: spreadsheetId })
+        .filter(function (comment) {
+          var sameLetter = String(comment.letter_id || '') === String(source.letter_id);
+          var deleted = String(comment.deleted_at || '').trim();
+          return sameLetter && !deleted;
+        })
+        .sort(function (a, b) {
+          return String(a.created_at || '').localeCompare(String(b.created_at || ''));
+        });
+    } catch (error) {
+      comments = [];
+    }
+  }
+
+  return {
+    ok: true,
+    letter: Object.assign({}, source, { comments: comments })
+  };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
