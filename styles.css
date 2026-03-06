@@ -275,6 +275,7 @@ button.ghost {
 .mailbox-post-button {
   position: relative;
   width: 100%;
+  aspect-ratio: 1 / 1;
   border: 1px solid #dce7e2;
   border-radius: 16px;
   background: #ffffff;
@@ -289,17 +290,20 @@ button.ghost {
 .mailbox-post-image {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 52%;
 }
 
 .mailbox-post-from {
   position: absolute;
-  left: 62%;
-  bottom: 22%;
+  left: 60%;
+  top: 64%;
   display: inline-flex;
   align-items: flex-end;
   gap: 0;
-  max-width: 28%;
+  max-width: 30%;
+  transform: translateY(-50%);
 }
 
 .mailbox-post-author {
