@@ -50,6 +50,15 @@ function resolveApiUrl(baseUrl, path) {
   return `${trimmed}${delimiter}path=${encodeURIComponent(path)}`;
 }
 
+function isScriptGoogleExecUrl(baseUrl) {
+  try {
+    const parsed = new URL(String(baseUrl || ''));
+    return parsed.hostname === 'script.google.com' && parsed.pathname.includes('/macros/s/');
+  } catch (error) {
+    return false;
+  }
+}
+
 function mockApi() {
   return {
     async enter(entryCode) {
@@ -100,17 +109,74 @@ function realApi(baseUrl = '') {
   const postHeaders = {
     'Content-Type': useCorsSafePost ? 'text/plain;charset=UTF-8' : 'application/json'
   };
+  const canUseRedirectFallback = isScriptGoogleExecUrl(baseUrl);
+  let redirectedBase = '';
+  let redirectedBasePromise = null;
   let mailboxCache = null;
   let mailboxRequestedAt = 0;
   let mailboxInflight = null;
   const MAILBOX_CACHE_TTL_MS = 10 * 1000;
 
+  async function resolveRedirectedBase() {
+    if (!canUseRedirectFallback) {
+      return baseUrl;
+    }
+
+    if (redirectedBase) {
+      return redirectedBase;
+    }
+
+    if (redirectedBasePromise) {
+      return redirectedBasePromise;
+    }
+
+    redirectedBasePromise = fetch(baseUrl, { method: 'GET' })
+      .then((response) => {
+        const resolvedUrl = String(response?.url || '').trim();
+        if (resolvedUrl.includes('script.googleusercontent.com')) {
+          redirectedBase = resolvedUrl;
+          return redirectedBase;
+        }
+        return baseUrl;
+      })
+      .catch(() => baseUrl)
+      .finally(() => {
+        redirectedBasePromise = null;
+      });
+
+    return redirectedBasePromise;
+  }
+
+  async function requestWithBaseFallback(path, optionsFactory) {
+    const primaryBase = redirectedBase || baseUrl;
+    try {
+      return await requestJson(resolveApiUrl(primaryBase, path), optionsFactory());
+    } catch (error) {
+      if (!canUseRedirectFallback || redirectedBase) {
+        throw error;
+      }
+
+      const resolvedBase = await resolveRedirectedBase();
+      if (!resolvedBase || resolvedBase === primaryBase) {
+        throw error;
+      }
+
+      return requestJson(resolveApiUrl(resolvedBase, path), optionsFactory());
+    }
+  }
+
   function postJson(path, payload) {
-    return requestJson(resolveApiUrl(baseUrl, path), {
+    return requestWithBaseFallback(path, () => ({
       method: 'POST',
       headers: postHeaders,
       body: JSON.stringify(payload)
-    });
+    }));
+  }
+
+  function getJson(path) {
+    return requestWithBaseFallback(path, () => ({
+      method: 'GET'
+    }));
   }
 
   function fetchMailboxes() {
@@ -118,7 +184,7 @@ function realApi(baseUrl = '') {
       return mailboxInflight;
     }
 
-    mailboxInflight = requestJson(resolveApiUrl(baseUrl, '/api/mailboxes'))
+    mailboxInflight = getJson('/api/mailboxes')
       .then((result) => {
         mailboxCache = result;
         mailboxRequestedAt = Date.now();
@@ -150,7 +216,7 @@ function realApi(baseUrl = '') {
       return fetchMailboxes();
     },
     async getLetter(letterId) {
-      return requestJson(resolveApiUrl(baseUrl, `/api/letters/${letterId}`));
+      return getJson(`/api/letters/${letterId}`);
     },
     async createComment(letterId, payload) {
       return postJson('/api/comments', { letter_id: letterId, ...payload });
