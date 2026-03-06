@@ -6,9 +6,16 @@ test('phase2: user can read mailbox and write comment', async ({ page }) => {
   await page.getByRole('button', { name: '입장하기' }).click();
 
   await expect(page.getByText('우체통 둘러보기')).toBeVisible();
-  await page.locator('.letter-button').first().click();
+  await expect(page.getByText('PHASE 2')).toHaveCount(0);
+  await expect(page.locator('.mailbox-post-button').first()).toBeVisible();
+  await expect(page.locator('.mailbox-post-from-image').first()).toBeVisible();
+  await expect(page.locator('.mailbox-post-author').first()).toBeVisible();
+  await page.locator('.mailbox-post-button').first().click();
 
-  await expect(page.getByRole('heading', { level: 2 })).toContainText('님의 편지');
+  await expect(page.locator('.letter-read-stage')).toBeVisible();
+  await expect(page.locator('.letter-read-stage .compose-dear-image')).toBeVisible();
+  await expect(page.locator('.letter-read-stage .compose-from-image')).toBeVisible();
+  await expect(page.locator('.letter-paper-content-readonly')).toBeVisible();
   await expect(page.getByRole('heading', { name: '댓글' })).toBeVisible();
   await page.getByLabel('작성자').fill('테스터');
   await page.getByLabel('댓글', { exact: true }).fill('반가워요');
