@@ -9,6 +9,34 @@ const mockDb = {
     }
   ]
 };
+const API_BASE_SESSION_KEY = 'dabda-post-office-api-base';
+
+function getSessionStorageSafe() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    return window.sessionStorage || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function persistApiBase(baseUrl) {
+  const storage = getSessionStorageSafe();
+  if (!storage) return;
+
+  const normalized = String(baseUrl || '').trim();
+  if (!normalized) return;
+  storage.setItem(API_BASE_SESSION_KEY, normalized);
+}
+
+function readPersistedApiBase() {
+  const storage = getSessionStorageSafe();
+  if (!storage) return '';
+  return String(storage.getItem(API_BASE_SESSION_KEY) || '').trim();
+}
 
 function readPhaseOverride() {
   if (typeof window === 'undefined') {
@@ -233,12 +261,17 @@ export function createApiClient() {
     typeof window !== 'undefined' && typeof window.__DABDA_API_BASE_URL__ === 'string'
       ? window.__DABDA_API_BASE_URL__.trim()
       : '';
+  const persistedBase = readPersistedApiBase();
   const isLocal =
     typeof window !== 'undefined' &&
     (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
   const useReal =
     queryMode === 'real' ? true : queryMode === 'mock' ? false : runtimeFlag !== false && (runtimeFlag === true || !isLocal);
-  const baseUrl = runtimeBase || queryBase;
+  const baseUrl = runtimeBase || queryBase || persistedBase;
+
+  if (useReal) {
+    persistApiBase(baseUrl);
+  }
 
   return useReal ? realApi(baseUrl) : mockApi();
 }
