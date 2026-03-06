@@ -74,4 +74,49 @@ describe('frontend api client', () => {
 
     expect(missingNickname.ok).toBe(false);
   });
+
+  it('reuses phase2 mailbox prefetch request when mailbox is requested immediately after entry', async () => {
+    globalThis.window = {
+      location: {
+        hostname: '127.0.0.1',
+        search: `?apiMode=real&apiBase=${encodeURIComponent(GAS_WEB_APP_URL)}`
+      }
+    };
+
+    let resolveMailbox;
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (String(url).includes('%2Fapi%2Fenter')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ ok: true, phase: 'PHASE_2' })
+        });
+      }
+
+      if (String(url).includes('%2Fapi%2Fmailboxes')) {
+        return new Promise((resolve) => {
+          resolveMailbox = () =>
+            resolve({
+              ok: true,
+              json: async () => ({ ok: true, letters: [{ letter_id: 'l1', visibility: 'PUBLIC' }] })
+            });
+        });
+      }
+
+      return Promise.reject(new Error(`Unexpected url: ${url}`));
+    });
+
+    const api = createApiClient();
+    const entered = await api.enter('DABDA2026');
+    expect(entered.phase).toBe('PHASE_2');
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+
+    const mailboxesPromise = api.getMailboxes();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+
+    resolveMailbox();
+    const mailboxes = await mailboxesPromise;
+    expect(mailboxes.ok).toBe(true);
+    expect(mailboxes.letters).toHaveLength(1);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+  });
 });

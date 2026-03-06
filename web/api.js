@@ -100,6 +100,10 @@ function realApi(baseUrl = '') {
   const postHeaders = {
     'Content-Type': useCorsSafePost ? 'text/plain;charset=UTF-8' : 'application/json'
   };
+  let mailboxCache = null;
+  let mailboxRequestedAt = 0;
+  let mailboxInflight = null;
+  const MAILBOX_CACHE_TTL_MS = 10 * 1000;
 
   function postJson(path, payload) {
     return requestJson(resolveApiUrl(baseUrl, path), {
@@ -109,15 +113,41 @@ function realApi(baseUrl = '') {
     });
   }
 
+  function fetchMailboxes() {
+    if (mailboxInflight) {
+      return mailboxInflight;
+    }
+
+    mailboxInflight = requestJson(resolveApiUrl(baseUrl, '/api/mailboxes'))
+      .then((result) => {
+        mailboxCache = result;
+        mailboxRequestedAt = Date.now();
+        return result;
+      })
+      .finally(() => {
+        mailboxInflight = null;
+      });
+
+    return mailboxInflight;
+  }
+
   return {
     async enter(entryCode) {
-      return postJson('/api/enter', { entryCode });
+      const result = await postJson('/api/enter', { entryCode });
+      if (result?.ok && result.phase === 'PHASE_2') {
+        // Start mailbox fetch early to cut phase2 perceived wait.
+        void fetchMailboxes().catch(() => null);
+      }
+      return result;
     },
     async submitLetter(payload) {
       return postJson('/api/letters', payload);
     },
     async getMailboxes() {
-      return requestJson(resolveApiUrl(baseUrl, '/api/mailboxes'));
+      if (mailboxCache && Date.now() - mailboxRequestedAt < MAILBOX_CACHE_TTL_MS) {
+        return mailboxCache;
+      }
+      return fetchMailboxes();
     },
     async getLetter(letterId) {
       return requestJson(resolveApiUrl(baseUrl, `/api/letters/${letterId}`));

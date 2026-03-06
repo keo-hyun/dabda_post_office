@@ -1,3 +1,6 @@
+const spreadsheetCache = new Map();
+const headerCache = new Map();
+
 function mapHeaderRow(headers = [], values = []) {
   return headers.reduce((acc, key, idx) => {
     acc[key] = values[idx] ?? '';
@@ -10,15 +13,27 @@ function resolveSpreadsheet(spreadsheetId, services = {}) {
     return services.spreadsheet;
   }
 
+  const cacheKey = spreadsheetId ? String(spreadsheetId) : '';
+  if (cacheKey && spreadsheetCache.has(cacheKey)) {
+    return spreadsheetCache.get(cacheKey);
+  }
+
+  let spreadsheet = null;
+
   if (typeof services.openById === 'function') {
-    return services.openById(spreadsheetId);
+    spreadsheet = services.openById(spreadsheetId);
+  } else if (typeof SpreadsheetApp !== 'undefined') {
+    spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+  }
+  if (!spreadsheet) {
+    throw new Error('Spreadsheet service is not available');
   }
 
-  if (typeof SpreadsheetApp !== 'undefined') {
-    return SpreadsheetApp.openById(spreadsheetId);
+  if (cacheKey) {
+    spreadsheetCache.set(cacheKey, spreadsheet);
   }
 
-  throw new Error('Spreadsheet service is not available');
+  return spreadsheet;
 }
 
 function getSheet(spreadsheet, sheetName) {
@@ -29,11 +44,21 @@ function getSheet(spreadsheet, sheetName) {
   return sheet;
 }
 
-function getHeaders(sheet) {
+function getHeaders(sheet, cacheKey = '') {
+  if (cacheKey && headerCache.has(cacheKey)) {
+    return headerCache.get(cacheKey);
+  }
+
   const lastColumn = sheet.getLastColumn();
   if (lastColumn === 0) return [];
   const headerRow = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
-  return headerRow.map((header) => String(header));
+  const headers = headerRow.map((header) => String(header));
+
+  if (cacheKey) {
+    headerCache.set(cacheKey, headers);
+  }
+
+  return headers;
 }
 
 function getAllRows(sheetName, options = {}) {
@@ -50,7 +75,8 @@ function getAllRows(sheetName, options = {}) {
 function appendRow(sheetName, payload = {}, options = {}) {
   const spreadsheet = resolveSpreadsheet(options.spreadsheetId, options.services);
   const sheet = getSheet(spreadsheet, sheetName);
-  const headers = options.headers || getHeaders(sheet);
+  const headerCacheKey = options.spreadsheetId ? `${options.spreadsheetId}:${sheetName}` : '';
+  const headers = options.headers || getHeaders(sheet, headerCacheKey);
   const row = headers.map((key) => payload[key] ?? '');
 
   sheet.appendRow(row);
@@ -103,9 +129,15 @@ function updateRowBy(sheetName, column, value, patch = {}, options = {}) {
   };
 }
 
+function clearGatewayCache() {
+  spreadsheetCache.clear();
+  headerCache.clear();
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     appendRow,
+    clearGatewayCache,
     findRowBy,
     getAllRows,
     mapHeaderRow,
