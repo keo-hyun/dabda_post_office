@@ -17,6 +17,24 @@ function screenFromPhase(phase) {
   return 'ENTRY';
 }
 
+function mergeComments(existingComments, incomingComments) {
+  const merged = new Map();
+  const existing = Array.isArray(existingComments) ? existingComments : [];
+  const incoming = Array.isArray(incomingComments) ? incomingComments : [];
+
+  existing.forEach((comment, index) => {
+    const key = String(comment?.comment_id || `existing-${index}`);
+    merged.set(key, comment);
+  });
+
+  incoming.forEach((comment, index) => {
+    const key = String(comment?.comment_id || `incoming-${index}`);
+    merged.set(key, comment);
+  });
+
+  return Array.from(merged.values());
+}
+
 export function reduceAppState(state, action) {
   switch (action.type) {
     case 'SET_ENTRY_CODE':
@@ -49,7 +67,29 @@ export function reduceAppState(state, action) {
         error: ''
       };
     case 'LETTER_LOADED':
-      return { ...state, screen: 'LETTER', selectedLetter: action.letter || null, error: '' };
+      if (!action.letter) {
+        return { ...state, screen: 'LETTER', selectedLetter: null, error: '' };
+      }
+      return {
+        ...state,
+        screen: 'LETTER',
+        selectedLetter: {
+          ...action.letter,
+          comments: mergeComments(state.selectedLetter?.comments, action.letter.comments)
+        },
+        error: ''
+      };
+    case 'COMMENT_ADDED':
+      if (!state.selectedLetter || !action.comment) {
+        return state;
+      }
+      return {
+        ...state,
+        selectedLetter: {
+          ...state.selectedLetter,
+          comments: mergeComments(state.selectedLetter.comments, [action.comment])
+        }
+      };
     case 'BACK_TO_MAILBOX':
       return { ...state, screen: 'MAILBOX', selectedLetter: null, selectedLetterId: '', error: '' };
     case 'SHOW_TRANSITION':

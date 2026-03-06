@@ -30,7 +30,8 @@ async function loadMailbox() {
 }
 
 async function openLetter(letterId) {
-  dispatch({ type: 'OPEN_LETTER', letterId });
+  const fallbackLetter = state.selectedLetterId === letterId ? state.selectedLetter : null;
+  dispatch({ type: 'OPEN_LETTER', letterId, letter: fallbackLetter });
   dispatch({ type: 'REQUEST_START' });
   try {
     const result = await api.getLetter(letterId);
@@ -51,6 +52,9 @@ async function submitComment(payload) {
     const result = await api.createComment(state.selectedLetterId, payload);
     if (!result.ok) {
       throw new Error(result.message || '댓글 저장에 실패했어요.');
+    }
+    if (result.comment) {
+      dispatch({ type: 'COMMENT_ADDED', comment: result.comment });
     }
     dispatch({ type: 'REQUEST_SUCCESS', message: '댓글을 저장했어요.' });
     await openLetter(state.selectedLetterId);
