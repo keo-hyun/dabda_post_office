@@ -297,21 +297,25 @@ button.ghost {
 
 .mailbox-post-from {
   position: absolute;
-  left: 60%;
+  left: 50%;
   top: 64%;
   display: inline-flex;
   align-items: flex-end;
+  justify-content: center;
   gap: 0;
-  max-width: 30%;
-  transform: translateY(-50%);
+  max-width: 36%;
+  transform: translate(-50%, -50%);
 }
 
 .mailbox-post-author {
+  display: inline-block;
   border-bottom: 0;
   padding-bottom: 0;
   font-size: 0.8rem;
   line-height: 1;
   color: rgba(49, 55, 53, 0.9);
+  transform: translateY(-10px);
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
