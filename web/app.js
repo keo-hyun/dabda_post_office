@@ -6,9 +6,36 @@ import { renderLetterView } from './views/letterView.js';
 import { renderMailboxView } from './views/mailboxView.js';
 import { renderTransitionView } from './views/transitionView.js';
 
+const ENTRY_SESSION_KEY = 'dabda-post-office-entry-phase';
 const api = createApiClient();
 const root = document.getElementById('app');
 let state = { ...initialState };
+
+function getSessionStorage() {
+  try {
+    return window.sessionStorage;
+  } catch (error) {
+    return null;
+  }
+}
+
+function persistEntryPhase(phase) {
+  const storage = getSessionStorage();
+  if (!storage) return;
+
+  if (phase === 'PHASE_2') {
+    storage.setItem(ENTRY_SESSION_KEY, phase);
+    return;
+  }
+
+  storage.removeItem(ENTRY_SESSION_KEY);
+}
+
+function readPersistedEntryPhase() {
+  const storage = getSessionStorage();
+  if (!storage) return '';
+  return String(storage.getItem(ENTRY_SESSION_KEY) || '');
+}
 
 function dispatch(action) {
   state = reduceAppState(state, action);
@@ -73,6 +100,7 @@ async function onEnter(entryCode) {
     }
 
     dispatch({ type: 'AUTH_OK', phase: result.phase });
+    persistEntryPhase(result.phase);
 
     if (result.phase === 'PHASE_2') {
       await loadMailbox();
@@ -135,4 +163,15 @@ function render() {
   }
 }
 
-render();
+async function bootstrap() {
+  const persistedPhase = readPersistedEntryPhase();
+  if (persistedPhase === 'PHASE_2') {
+    dispatch({ type: 'AUTH_OK', phase: 'PHASE_2' });
+    await loadMailbox();
+    return;
+  }
+
+  render();
+}
+
+void bootstrap();
