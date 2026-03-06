@@ -294,17 +294,12 @@ button.ghost {
 
 .mailbox-post-from {
   position: absolute;
-  right: 8%;
-  bottom: 11%;
+  left: 58%;
+  bottom: 17%;
   display: inline-flex;
   align-items: flex-end;
-  gap: 2px;
-  max-width: 56%;
-}
-
-.mailbox-post-from-image {
-  width: clamp(40px, 18vw, 62px);
-  height: auto;
+  gap: 0;
+  max-width: 34%;
 }
 
 .mailbox-post-author {
@@ -342,7 +337,8 @@ button.ghost {
   }
 
   .mailbox-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 }
 

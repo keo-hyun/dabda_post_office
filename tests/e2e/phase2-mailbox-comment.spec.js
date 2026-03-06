@@ -1,15 +1,33 @@
 import { test, expect } from '@playwright/test';
 
 test('phase2: user can read mailbox and write comment', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?phase=PHASE_2');
   await page.getByLabel('입장 코드').fill('DABDA2026');
   await page.getByRole('button', { name: '입장하기' }).click();
 
   await expect(page.getByText('우체통 둘러보기')).toBeVisible();
   await expect(page.getByText('PHASE 2')).toHaveCount(0);
+  const gridColumns = await page.locator('.mailbox-list').evaluate((element) => {
+    return getComputedStyle(element).gridTemplateColumns;
+  });
+  expect(gridColumns.split(' ').length).toBeGreaterThanOrEqual(2);
+
   await expect(page.locator('.mailbox-post-button').first()).toBeVisible();
-  await expect(page.locator('.mailbox-post-from-image').first()).toBeVisible();
+  await expect(page.locator('.mailbox-post-from-image')).toHaveCount(0);
   await expect(page.locator('.mailbox-post-author').first()).toBeVisible();
+  const inImage = await page.locator('.mailbox-post-button').first().evaluate((button) => {
+    const author = button.querySelector('.mailbox-post-author');
+    const buttonRect = button.getBoundingClientRect();
+    const authorRect = author.getBoundingClientRect();
+    return (
+      authorRect.left >= buttonRect.left &&
+      authorRect.right <= buttonRect.right &&
+      authorRect.top >= buttonRect.top &&
+      authorRect.bottom <= buttonRect.bottom
+    );
+  });
+  expect(inImage).toBe(true);
   await page.locator('.mailbox-post-button').first().click();
 
   await expect(page.locator('.letter-read-stage')).toBeVisible();

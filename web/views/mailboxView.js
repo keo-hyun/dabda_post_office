@@ -15,7 +15,6 @@ export function renderMailboxView(container, state, handlers) {
           <button type="button" class="mailbox-post-button" data-letter-id="${letter.letter_id}">
             <img class="mailbox-post-image" src="./assets/post.png" alt="우체통" loading="lazy" decoding="async" />
             <span class="mailbox-post-from">
-              <img class="mailbox-post-from-image" src="./assets/From.png" alt="From" loading="lazy" decoding="async" />
               <strong class="mailbox-post-author">${escapeHtml(letter.nickname || '익명')}</strong>
             </span>
           </button>
