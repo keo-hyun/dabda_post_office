@@ -1,4 +1,5 @@
 import { createApiClient } from './api.js';
+import { startLoopingAudio } from './audio.js';
 import { initialState, reduceAppState } from './state.js';
 import { renderComposeView } from './views/composeView.js';
 import { renderEntryView } from './views/entryView.js';
@@ -6,9 +7,37 @@ import { renderLetterView } from './views/letterView.js';
 import { renderMailboxView } from './views/mailboxView.js';
 import { renderTransitionView } from './views/transitionView.js';
 
+const ENTRY_SESSION_KEY = 'dabda-post-office-entry-phase';
 const api = createApiClient();
 const root = document.getElementById('app');
 let state = { ...initialState };
+startLoopingAudio();
+
+function getSessionStorage() {
+  try {
+    return window.sessionStorage;
+  } catch (error) {
+    return null;
+  }
+}
+
+function persistEntryPhase(phase) {
+  const storage = getSessionStorage();
+  if (!storage) return;
+
+  if (phase === 'PHASE_2') {
+    storage.setItem(ENTRY_SESSION_KEY, phase);
+    return;
+  }
+
+  storage.removeItem(ENTRY_SESSION_KEY);
+}
+
+function readPersistedEntryPhase() {
+  const storage = getSessionStorage();
+  if (!storage) return '';
+  return String(storage.getItem(ENTRY_SESSION_KEY) || '');
+}
 
 function dispatch(action) {
   state = reduceAppState(state, action);
@@ -24,13 +53,29 @@ async function loadMailbox() {
     }
     dispatch({ type: 'MAILBOX_LOADED', letters: result.letters });
     dispatch({ type: 'REQUEST_SUCCESS' });
+
+    const letters = Array.isArray(result.letters) ? result.letters : [];
+    letters.slice(0, 6).forEach((letter) => {
+      const letterId = String(letter?.letter_id || '');
+      if (!letterId || typeof api.prefetchLetter !== 'function') return;
+      void api.prefetchLetter(letterId).catch(() => null);
+    });
   } catch (error) {
     dispatch({ type: 'REQUEST_ERROR', message: error.message });
   }
 }
 
-async function openLetter(letterId) {
-  dispatch({ type: 'OPEN_LETTER', letterId });
+async function openLetter(letterOrId) {
+  const letterId =
+    typeof letterOrId === 'string' ? letterOrId : letterOrId && letterOrId.letter_id ? String(letterOrId.letter_id) : '';
+  if (!letterId) return;
+
+  const previewLetter =
+    (letterOrId && typeof letterOrId === 'object' ? letterOrId : null) ||
+    state.letters.find((item) => String(item.letter_id) === letterId) ||
+    (state.selectedLetterId === letterId ? state.selectedLetter : null);
+
+  dispatch({ type: 'OPEN_LETTER', letterId, letter: previewLetter });
   dispatch({ type: 'REQUEST_START' });
   try {
     const result = await api.getLetter(letterId);
@@ -52,8 +97,10 @@ async function submitComment(payload) {
     if (!result.ok) {
       throw new Error(result.message || '댓글 저장에 실패했어요.');
     }
+    if (result.comment) {
+      dispatch({ type: 'COMMENT_ADDED', comment: result.comment });
+    }
     dispatch({ type: 'REQUEST_SUCCESS', message: '댓글을 저장했어요.' });
-    await openLetter(state.selectedLetterId);
   } catch (error) {
     dispatch({ type: 'REQUEST_ERROR', message: error.message });
   }
@@ -69,6 +116,7 @@ async function onEnter(entryCode) {
     }
 
     dispatch({ type: 'AUTH_OK', phase: result.phase });
+    persistEntryPhase(result.phase);
 
     if (result.phase === 'PHASE_2') {
       await loadMailbox();
@@ -131,4 +179,19 @@ function render() {
   }
 }
 
-render();
+async function bootstrap() {
+  if (typeof api.warmup === 'function') {
+    void api.warmup().catch(() => null);
+  }
+
+  const persistedPhase = readPersistedEntryPhase();
+  if (persistedPhase === 'PHASE_2') {
+    dispatch({ type: 'AUTH_OK', phase: 'PHASE_2' });
+    await loadMailbox();
+    return;
+  }
+
+  render();
+}
+
+void bootstrap();

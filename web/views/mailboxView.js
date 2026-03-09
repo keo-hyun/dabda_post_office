@@ -1,11 +1,26 @@
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function renderMailboxView(container, state, handlers) {
+  const letterById = new Map(
+    (state.letters || []).map((letter) => [String(letter.letter_id || ''), letter])
+  );
+
   const items = state.letters
     .map(
       (letter) => `
         <li>
-          <button type="button" class="letter-button" data-letter-id="${letter.letter_id}">
-            <strong>${letter.nickname}</strong>
-            <span>${letter.content.slice(0, 60)}</span>
+          <button type="button" class="mailbox-post-button" data-letter-id="${letter.letter_id}">
+            <img class="mailbox-post-image" src="./assets/post_3.png" alt="우체통" loading="lazy" decoding="async" />
+            <span class="mailbox-post-from">
+              <strong class="mailbox-post-author">${escapeHtml(letter.nickname || '익명')}</strong>
+            </span>
           </button>
         </li>
       `
@@ -14,7 +29,6 @@ export function renderMailboxView(container, state, handlers) {
 
   container.innerHTML = `
     <section class="card">
-      <p class="eyebrow">PHASE 2</p>
       <h2>우체통 둘러보기</h2>
       ${state.loading ? '<p class="muted">우체통을 불러오는 중...</p>' : ''}
       ${state.error ? `<p class="error">${state.error}</p>` : ''}
@@ -23,6 +37,9 @@ export function renderMailboxView(container, state, handlers) {
   `;
 
   container.querySelectorAll('[data-letter-id]').forEach((button) => {
-    button.addEventListener('click', () => handlers.onOpenLetter(button.dataset.letterId));
+    button.addEventListener('click', () => {
+      const letterId = String(button.dataset.letterId || '');
+      handlers.onOpenLetter(letterById.get(letterId) || letterId);
+    });
   });
 }

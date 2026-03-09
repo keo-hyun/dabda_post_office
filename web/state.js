@@ -6,6 +6,7 @@ export const initialState = {
   success: '',
   loading: false,
   letters: [],
+  commentCacheByLetter: {},
   selectedLetterId: '',
   selectedLetter: null
 };
@@ -15,6 +16,19 @@ function screenFromPhase(phase) {
   if (phase === 'TRANSITION') return 'TRANSITION';
   if (phase === 'PHASE_2') return 'MAILBOX';
   return 'ENTRY';
+}
+
+function mergeComments(...commentLists) {
+  const merged = new Map();
+  commentLists.forEach((comments, listIndex) => {
+    const safeList = Array.isArray(comments) ? comments : [];
+    safeList.forEach((comment, index) => {
+      const key = String(comment?.comment_id || `list-${listIndex}-${index}`);
+      merged.set(key, comment);
+    });
+  });
+
+  return Array.from(merged.values());
 }
 
 export function reduceAppState(state, action) {
@@ -49,7 +63,46 @@ export function reduceAppState(state, action) {
         error: ''
       };
     case 'LETTER_LOADED':
-      return { ...state, screen: 'LETTER', selectedLetter: action.letter || null, error: '' };
+      if (!action.letter) {
+        return { ...state, screen: 'LETTER', selectedLetter: null, error: '' };
+      }
+      var letterId = String(action.letter.letter_id || '');
+      var cachedComments = letterId ? state.commentCacheByLetter?.[letterId] : [];
+      var mergedComments = mergeComments(cachedComments, state.selectedLetter?.comments, action.letter.comments);
+      return {
+        ...state,
+        screen: 'LETTER',
+        selectedLetter: {
+          ...action.letter,
+          comments: mergedComments
+        },
+        commentCacheByLetter: letterId
+          ? {
+              ...state.commentCacheByLetter,
+              [letterId]: mergedComments
+            }
+          : state.commentCacheByLetter,
+        error: ''
+      };
+    case 'COMMENT_ADDED':
+      if (!state.selectedLetter || !action.comment) {
+        return state;
+      }
+      var selectedId = String(state.selectedLetter.letter_id || state.selectedLetterId || '');
+      var nextComments = mergeComments(state.selectedLetter.comments, [action.comment]);
+      return {
+        ...state,
+        selectedLetter: {
+          ...state.selectedLetter,
+          comments: nextComments
+        },
+        commentCacheByLetter: selectedId
+          ? {
+              ...state.commentCacheByLetter,
+              [selectedId]: nextComments
+            }
+          : state.commentCacheByLetter
+      };
     case 'BACK_TO_MAILBOX':
       return { ...state, screen: 'MAILBOX', selectedLetter: null, selectedLetterId: '', error: '' };
     case 'SHOW_TRANSITION':
