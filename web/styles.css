@@ -347,7 +347,7 @@ button.ghost {
   }
 
   .compose-paper .compose-from-group {
-    transform: translateX(-10px);
+    transform: translateX(-20px);
   }
 
   .mailbox-list {
