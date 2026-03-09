@@ -210,4 +210,85 @@ describe('frontend api client', () => {
       expect.objectContaining({ method: 'GET' })
     );
   });
+
+  it('warms redirected base and phase endpoint before entry request', async () => {
+    globalThis.window = {
+      location: {
+        hostname: 'keo-hyun.github.io',
+        search: `?apiMode=real&apiBase=${encodeURIComponent(GAS_WEB_APP_URL)}`
+      }
+    };
+
+    const redirectedBase =
+      'https://script.googleusercontent.com/macros/echo?user_content_key=test_key&lib=test_lib';
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        url: redirectedBase,
+        json: async () => ({ ok: true })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, phase: 'PHASE_2' })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, phase: 'PHASE_2' })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, letters: [] })
+      });
+
+    const api = createApiClient();
+    await api.warmup();
+    const entered = await api.enter('DABDA2026');
+
+    expect(entered.ok).toBe(true);
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(
+      1,
+      GAS_WEB_APP_URL,
+      expect.objectContaining({ method: 'GET' })
+    );
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(
+      2,
+      `${redirectedBase}&path=%2Fapi%2Fphase`,
+      expect.objectContaining({ method: 'GET' })
+    );
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(
+      3,
+      `${redirectedBase}&path=%2Fapi%2Fenter`,
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+
+  it('prefetches and reuses letter detail cache for immediate open', async () => {
+    globalThis.window = {
+      location: {
+        hostname: 'keo-hyun.github.io',
+        search: `?apiMode=real&apiBase=${encodeURIComponent(GAS_WEB_APP_URL)}`
+      }
+    };
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        letter: {
+          letter_id: 'l1',
+          nickname: '작성자',
+          content: '내용',
+          comments: []
+        }
+      })
+    });
+
+    const api = createApiClient();
+    await api.prefetchLetter('l1');
+    const letter = await api.getLetter('l1');
+
+    expect(letter.ok).toBe(true);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+  });
 });
