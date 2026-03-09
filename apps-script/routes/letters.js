@@ -21,6 +21,52 @@ function getDriveGateway(deps) {
   return require('../lib/driveGateway.js');
 }
 
+function mailboxCacheKey(spreadsheetId) {
+  return 'mailboxes:' + String(spreadsheetId || '');
+}
+
+function letterDetailCacheKey(spreadsheetId, letterId) {
+  return 'letter:' + String(spreadsheetId || '') + ':' + String(letterId || '');
+}
+
+function readCachedJson(cacheGateway, key) {
+  if (!cacheGateway || !key || typeof cacheGateway.get !== 'function') {
+    return null;
+  }
+
+  try {
+    var raw = cacheGateway.get(key);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeCachedJson(cacheGateway, key, payload, ttlSeconds) {
+  if (!cacheGateway || !key || typeof cacheGateway.set !== 'function') {
+    return;
+  }
+
+  try {
+    cacheGateway.set(key, JSON.stringify(payload), ttlSeconds || 15);
+  } catch (error) {
+    // Cache is best-effort only.
+  }
+}
+
+function invalidateMailboxCache(cacheGateway, spreadsheetId) {
+  if (!cacheGateway || typeof cacheGateway.remove !== 'function') {
+    return;
+  }
+
+  try {
+    cacheGateway.remove(mailboxCacheKey(spreadsheetId));
+  } catch (error) {
+    // Cache invalidation is best-effort only.
+  }
+}
+
 function createLetterRoute(body, deps) {
   var payload = body || {};
   var options = deps || {};
@@ -29,6 +75,7 @@ function createLetterRoute(body, deps) {
   var driveGateway = getDriveGateway(options);
   var driveFolderId = options.driveFolderId || payload.drive_folder_id || '';
   var spreadsheetId = options.spreadsheetId || '';
+  var cacheGateway = options.cacheGateway || null;
   var validation = core.validateLetterPayload(payload);
   var nickname = String(payload.nickname || '').trim();
 
@@ -64,6 +111,7 @@ function createLetterRoute(body, deps) {
   if (sheetsGateway && spreadsheetId) {
     sheetsGateway.appendRow('Letters', letter, { spreadsheetId: spreadsheetId });
   }
+  invalidateMailboxCache(cacheGateway, spreadsheetId);
 
   return {
     ok: true,
@@ -80,17 +128,36 @@ function getMailboxesRoute(letters, context, deps) {
   var core = lettersCore();
   var sheetsGateway = options.sheetsGateway || null;
   var spreadsheetId = options.spreadsheetId || '';
+  var cacheGateway = options.cacheGateway || null;
+  var cacheKey = mailboxCacheKey(spreadsheetId);
+
+  if (!inputLetters.length && spreadsheetId) {
+    var cachedLetters = readCachedJson(cacheGateway, cacheKey);
+    if (Array.isArray(cachedLetters)) {
+      return {
+        ok: true,
+        letters: cachedLetters,
+        metric: core.buildMetricEvent('MAILBOX_VIEW', { userId: ctx.userId || '' })
+      };
+    }
+  }
+
   var source = inputLetters.length
     ? inputLetters
     : sheetsGateway && spreadsheetId
       ? sheetsGateway.getAllRows('Letters', { spreadsheetId: spreadsheetId })
       : [];
+  var visibleLetters = source.filter(function (letter) {
+    return core.canViewLetter(letter, ctx) && letter.visibility === 'PUBLIC';
+  });
+
+  if (!inputLetters.length && spreadsheetId) {
+    writeCachedJson(cacheGateway, cacheKey, visibleLetters, 15);
+  }
 
   return {
     ok: true,
-    letters: source.filter(function (letter) {
-      return core.canViewLetter(letter, ctx) && letter.visibility === 'PUBLIC';
-    }),
+    letters: visibleLetters,
     metric: core.buildMetricEvent('MAILBOX_VIEW', { userId: ctx.userId || '' })
   };
 }
@@ -102,6 +169,18 @@ function getLetterByIdRoute(letter, context, deps) {
   var core = lettersCore();
   var sheetsGateway = options.sheetsGateway || null;
   var spreadsheetId = options.spreadsheetId || '';
+  var cacheGateway = options.cacheGateway || null;
+  var cacheKey = letterDetailCacheKey(spreadsheetId, ctx.letterId || (source && source.letter_id));
+
+  if (!source && spreadsheetId && ctx.letterId) {
+    var cachedLetter = readCachedJson(cacheGateway, cacheKey);
+    if (cachedLetter && core.canViewLetter(cachedLetter, ctx)) {
+      return {
+        ok: true,
+        letter: cachedLetter
+      };
+    }
+  }
 
   if (!source && sheetsGateway && spreadsheetId && ctx.letterId) {
     var found = sheetsGateway.findRowBy('Letters', 'letter_id', ctx.letterId, { spreadsheetId: spreadsheetId });
@@ -134,9 +213,14 @@ function getLetterByIdRoute(letter, context, deps) {
     }
   }
 
+  var letterWithComments = Object.assign({}, source, { comments: comments });
+  if (spreadsheetId && source.letter_id) {
+    writeCachedJson(cacheGateway, letterDetailCacheKey(spreadsheetId, source.letter_id), letterWithComments, 15);
+  }
+
   return {
     ok: true,
-    letter: Object.assign({}, source, { comments: comments })
+    letter: letterWithComments
   };
 }
 

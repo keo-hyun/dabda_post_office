@@ -12,12 +12,29 @@ function commentsCore() {
   return require('../lib/core.js');
 }
 
+function letterDetailCacheKey(spreadsheetId, letterId) {
+  return 'letter:' + String(spreadsheetId || '') + ':' + String(letterId || '');
+}
+
+function invalidateLetterDetailCache(cacheGateway, spreadsheetId, letterId) {
+  if (!cacheGateway || typeof cacheGateway.remove !== 'function' || !spreadsheetId || !letterId) {
+    return;
+  }
+
+  try {
+    cacheGateway.remove(letterDetailCacheKey(spreadsheetId, letterId));
+  } catch (error) {
+    // Cache invalidation is best-effort only.
+  }
+}
+
 function createCommentRoute(body, deps) {
   var payload = body || {};
   var options = deps || {};
   var core = commentsCore();
   var sheetsGateway = options.sheetsGateway || null;
   var spreadsheetId = options.spreadsheetId || '';
+  var cacheGateway = options.cacheGateway || null;
   var nickname = String(payload.nickname || '').trim();
   var content = String(payload.content || '').trim();
 
@@ -39,6 +56,7 @@ function createCommentRoute(body, deps) {
   if (sheetsGateway && spreadsheetId) {
     sheetsGateway.appendRow('Comments', comment, { spreadsheetId: spreadsheetId });
   }
+  invalidateLetterDetailCache(cacheGateway, spreadsheetId, payload.letter_id);
 
   return {
     ok: true,
@@ -55,6 +73,7 @@ function updateCommentRoute(comment, body, context, deps) {
   var core = commentsCore();
   var sheetsGateway = options.sheetsGateway || null;
   var spreadsheetId = options.spreadsheetId || '';
+  var cacheGateway = options.cacheGateway || null;
 
   if (!source && sheetsGateway && spreadsheetId && payload.comment_id) {
     var found = sheetsGateway.findRowBy('Comments', 'comment_id', payload.comment_id, { spreadsheetId: spreadsheetId });
@@ -80,6 +99,7 @@ function updateCommentRoute(comment, body, context, deps) {
       spreadsheetId: spreadsheetId
     });
   }
+  invalidateLetterDetailCache(cacheGateway, spreadsheetId, updatedComment.letter_id);
 
   return {
     ok: true,
@@ -96,6 +116,7 @@ function deleteCommentRoute(comment, body, context, deps) {
   var core = commentsCore();
   var sheetsGateway = options.sheetsGateway || null;
   var spreadsheetId = options.spreadsheetId || '';
+  var cacheGateway = options.cacheGateway || null;
 
   if (!source && sheetsGateway && spreadsheetId && payload.comment_id) {
     var found = sheetsGateway.findRowBy('Comments', 'comment_id', payload.comment_id, { spreadsheetId: spreadsheetId });
@@ -117,6 +138,7 @@ function deleteCommentRoute(comment, body, context, deps) {
       spreadsheetId: spreadsheetId
     });
   }
+  invalidateLetterDetailCache(cacheGateway, spreadsheetId, softDeleted.letter_id);
 
   return {
     ok: true,

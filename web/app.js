@@ -58,9 +58,17 @@ async function loadMailbox() {
   }
 }
 
-async function openLetter(letterId) {
-  const fallbackLetter = state.selectedLetterId === letterId ? state.selectedLetter : null;
-  dispatch({ type: 'OPEN_LETTER', letterId, letter: fallbackLetter });
+async function openLetter(letterOrId) {
+  const letterId =
+    typeof letterOrId === 'string' ? letterOrId : letterOrId && letterOrId.letter_id ? String(letterOrId.letter_id) : '';
+  if (!letterId) return;
+
+  const previewLetter =
+    (letterOrId && typeof letterOrId === 'object' ? letterOrId : null) ||
+    state.letters.find((item) => String(item.letter_id) === letterId) ||
+    (state.selectedLetterId === letterId ? state.selectedLetter : null);
+
+  dispatch({ type: 'OPEN_LETTER', letterId, letter: previewLetter });
   dispatch({ type: 'REQUEST_START' });
   try {
     const result = await api.getLetter(letterId);
@@ -86,7 +94,6 @@ async function submitComment(payload) {
       dispatch({ type: 'COMMENT_ADDED', comment: result.comment });
     }
     dispatch({ type: 'REQUEST_SUCCESS', message: '댓글을 저장했어요.' });
-    await openLetter(state.selectedLetterId);
   } catch (error) {
     dispatch({ type: 'REQUEST_ERROR', message: error.message });
   }

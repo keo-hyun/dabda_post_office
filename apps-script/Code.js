@@ -91,8 +91,29 @@ function readScriptProperties() {
 function buildRouteDeps() {
   var props = readScriptProperties();
   var gateways = gatewayFns();
+  var cacheGateway = null;
+
+  if (typeof CacheService !== 'undefined') {
+    try {
+      var scriptCache = CacheService.getScriptCache();
+      cacheGateway = {
+        get: function (key) {
+          return scriptCache.get(String(key || '')) || '';
+        },
+        set: function (key, value, ttlSeconds) {
+          scriptCache.put(String(key || ''), String(value || ''), Number(ttlSeconds) || 15);
+        },
+        remove: function (key) {
+          scriptCache.remove(String(key || ''));
+        }
+      };
+    } catch (error) {
+      cacheGateway = null;
+    }
+  }
 
   return {
+    cacheGateway: cacheGateway,
     driveFolderId: props.DRIVE_FOLDER_ID || '',
     spreadsheetId: props.SPREADSHEET_ID || '',
     driveGateway: gateways.driveGateway,
