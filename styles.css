@@ -350,6 +350,10 @@ button.ghost {
     transform: translateX(-20px);
   }
 
+  .compose-paper .compose-author-input {
+    transform: translateX(-4px);
+  }
+
   .mailbox-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
