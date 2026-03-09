@@ -6,6 +6,7 @@ export const initialState = {
   success: '',
   loading: false,
   letters: [],
+  commentCacheByLetter: {},
   selectedLetterId: '',
   selectedLetter: null
 };
@@ -17,19 +18,14 @@ function screenFromPhase(phase) {
   return 'ENTRY';
 }
 
-function mergeComments(existingComments, incomingComments) {
+function mergeComments(...commentLists) {
   const merged = new Map();
-  const existing = Array.isArray(existingComments) ? existingComments : [];
-  const incoming = Array.isArray(incomingComments) ? incomingComments : [];
-
-  existing.forEach((comment, index) => {
-    const key = String(comment?.comment_id || `existing-${index}`);
-    merged.set(key, comment);
-  });
-
-  incoming.forEach((comment, index) => {
-    const key = String(comment?.comment_id || `incoming-${index}`);
-    merged.set(key, comment);
+  commentLists.forEach((comments, listIndex) => {
+    const safeList = Array.isArray(comments) ? comments : [];
+    safeList.forEach((comment, index) => {
+      const key = String(comment?.comment_id || `list-${listIndex}-${index}`);
+      merged.set(key, comment);
+    });
   });
 
   return Array.from(merged.values());
@@ -70,25 +66,42 @@ export function reduceAppState(state, action) {
       if (!action.letter) {
         return { ...state, screen: 'LETTER', selectedLetter: null, error: '' };
       }
+      var letterId = String(action.letter.letter_id || '');
+      var cachedComments = letterId ? state.commentCacheByLetter?.[letterId] : [];
+      var mergedComments = mergeComments(cachedComments, state.selectedLetter?.comments, action.letter.comments);
       return {
         ...state,
         screen: 'LETTER',
         selectedLetter: {
           ...action.letter,
-          comments: mergeComments(state.selectedLetter?.comments, action.letter.comments)
+          comments: mergedComments
         },
+        commentCacheByLetter: letterId
+          ? {
+              ...state.commentCacheByLetter,
+              [letterId]: mergedComments
+            }
+          : state.commentCacheByLetter,
         error: ''
       };
     case 'COMMENT_ADDED':
       if (!state.selectedLetter || !action.comment) {
         return state;
       }
+      var selectedId = String(state.selectedLetter.letter_id || state.selectedLetterId || '');
+      var nextComments = mergeComments(state.selectedLetter.comments, [action.comment]);
       return {
         ...state,
         selectedLetter: {
           ...state.selectedLetter,
-          comments: mergeComments(state.selectedLetter.comments, [action.comment])
-        }
+          comments: nextComments
+        },
+        commentCacheByLetter: selectedId
+          ? {
+              ...state.commentCacheByLetter,
+              [selectedId]: nextComments
+            }
+          : state.commentCacheByLetter
       };
     case 'BACK_TO_MAILBOX':
       return { ...state, screen: 'MAILBOX', selectedLetter: null, selectedLetterId: '', error: '' };
