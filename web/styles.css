@@ -346,12 +346,10 @@ button.ghost {
     max-width: calc(100% - var(--from-image-width));
   }
 
-  .compose-paper .compose-from-group {
-    transform: translateX(-20px);
-  }
-
   .compose-paper .compose-author-input {
-    transform: translateX(-4px);
+    margin-left: -2px;
+    margin-right: 3px;
+    max-width: none;
   }
 
   .mailbox-list {

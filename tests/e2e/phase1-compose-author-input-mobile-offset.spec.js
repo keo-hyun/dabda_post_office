@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('phase1: mobile author input shifts slightly left', async ({ page }) => {
+test('phase1: mobile author input starts right after from image', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     window.sessionStorage.clear();
@@ -10,11 +10,13 @@ test('phase1: mobile author input shifts slightly left', async ({ page }) => {
   await page.getByRole('button', { name: '입장하기' }).click();
   await expect(page.locator('.compose-paper .compose-author-input')).toBeVisible();
 
-  const shiftX = await page.locator('.compose-paper .compose-author-input').evaluate((element) => {
-    const transform = getComputedStyle(element).transform;
-    if (!transform || transform === 'none') return 0;
-    return new DOMMatrixReadOnly(transform).m41;
+  const gap = await page.locator('.compose-paper .compose-from-group').evaluate((group) => {
+    const fromImage = group.querySelector('.compose-from-image');
+    const authorInput = group.querySelector('.compose-author-input');
+    const imageRect = fromImage.getBoundingClientRect();
+    const inputRect = authorInput.getBoundingClientRect();
+    return inputRect.left - imageRect.right;
   });
 
-  expect(shiftX).toBe(-4);
+  expect(gap).toBeLessThanOrEqual(0);
 });

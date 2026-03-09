@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('phase1: mobile compose from block shifts left by 20px', async ({ page }) => {
+test('phase1: mobile compose from block keeps baseline x position', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     window.sessionStorage.clear();
@@ -16,5 +16,5 @@ test('phase1: mobile compose from block shifts left by 20px', async ({ page }) =
     return new DOMMatrixReadOnly(transform).m41;
   });
 
-  expect(shiftX).toBe(-20);
+  expect(shiftX).toBe(0);
 });
