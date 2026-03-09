@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('phase2: read view author name allows wrapping instead of ellipsis', async ({ page }) => {
+test('phase2: read view author area is wide enough on mobile and avoids ellipsis', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     window.sessionStorage.clear();
@@ -13,9 +13,14 @@ test('phase2: read view author name allows wrapping instead of ellipsis', async 
   await page.locator('.mailbox-post-button').first().click();
   await expect(page.locator('.letter-read-stage .compose-author-readonly')).toBeVisible();
 
-  const style = await page.locator('.letter-read-stage .compose-author-readonly').evaluate((element) => {
-    const computed = getComputedStyle(element);
+  const result = await page.locator('.letter-read-stage').evaluate((stage) => {
+    const author = stage.querySelector('.compose-author-readonly');
+    const group = stage.querySelector('.compose-from-group');
+    const stageRect = stage.getBoundingClientRect();
+    const groupRect = group.getBoundingClientRect();
+    const computed = getComputedStyle(author);
     return {
+      widthRatio: groupRect.width / stageRect.width,
       whiteSpace: computed.whiteSpace,
       textOverflow: computed.textOverflow,
       overflowX: computed.overflowX,
@@ -23,8 +28,9 @@ test('phase2: read view author name allows wrapping instead of ellipsis', async 
     };
   });
 
-  expect(style.whiteSpace).not.toBe('nowrap');
-  expect(style.textOverflow).not.toBe('ellipsis');
-  expect(style.overflowX).not.toBe('hidden');
-  expect(style.overflowWrap).toBe('anywhere');
+  expect(result.widthRatio).toBeGreaterThanOrEqual(0.45);
+  expect(result.whiteSpace).not.toBe('nowrap');
+  expect(result.textOverflow).not.toBe('ellipsis');
+  expect(result.overflowX).not.toBe('hidden');
+  expect(result.overflowWrap).toBe('anywhere');
 });

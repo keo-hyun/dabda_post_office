@@ -263,7 +263,12 @@ button.ghost {
   text-overflow: ellipsis;
 }
 
+.letter-read-stage .compose-from-group {
+  width: clamp(150px, 52%, 280px);
+}
+
 .letter-read-stage .compose-author-readonly {
+  display: inline-block;
   max-width: none;
   white-space: normal;
   overflow: visible;
