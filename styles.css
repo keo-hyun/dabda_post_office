@@ -263,6 +263,16 @@ button.ghost {
   text-overflow: ellipsis;
 }
 
+.letter-read-stage .compose-author-readonly {
+  max-width: none;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
 .letter-paper-content-readonly {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
