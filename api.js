@@ -10,6 +10,7 @@ const mockDb = {
   ]
 };
 const API_BASE_SESSION_KEY = 'dabda-post-office-api-base';
+const REDIRECT_BASE_SESSION_KEY = 'dabda-post-office-api-redirect-base';
 
 function getSessionStorageSafe() {
   if (typeof window === 'undefined') {
@@ -30,6 +31,29 @@ function persistApiBase(baseUrl) {
   const normalized = String(baseUrl || '').trim();
   if (!normalized) return;
   storage.setItem(API_BASE_SESSION_KEY, normalized);
+}
+
+function redirectSessionKey(baseUrl) {
+  const normalized = String(baseUrl || '').trim();
+  if (!normalized) return '';
+  return `${REDIRECT_BASE_SESSION_KEY}:${encodeURIComponent(normalized)}`;
+}
+
+function persistRedirectedBase(baseUrl, redirectedBase) {
+  const storage = getSessionStorageSafe();
+  if (!storage) return;
+  const key = redirectSessionKey(baseUrl);
+  const value = String(redirectedBase || '').trim();
+  if (!key || !value) return;
+  storage.setItem(key, value);
+}
+
+function readPersistedRedirectedBase(baseUrl) {
+  const storage = getSessionStorageSafe();
+  if (!storage) return '';
+  const key = redirectSessionKey(baseUrl);
+  if (!key) return '';
+  return String(storage.getItem(key) || '').trim();
 }
 
 function readPersistedApiBase() {
@@ -89,6 +113,9 @@ function isScriptGoogleExecUrl(baseUrl) {
 
 function mockApi() {
   return {
+    async warmup() {
+      return { ok: true };
+    },
     async enter(entryCode) {
       if (entryCode !== 'DABDA2026') {
         return { ok: false, message: '입장 코드가 올바르지 않아요.' };
@@ -114,6 +141,9 @@ function mockApi() {
       if (!letter) return { ok: false, message: '편지를 찾을 수 없어요.' };
       return { ok: true, letter };
     },
+    async prefetchLetter(letterId) {
+      return this.getLetter(letterId);
+    },
     async createComment(letterId, payload) {
       const letter = mockDb.letters.find((item) => item.letter_id === letterId);
       if (!letter) return { ok: false, message: '편지를 찾을 수 없어요.' };
@@ -138,12 +168,16 @@ function realApi(baseUrl = '') {
     'Content-Type': useCorsSafePost ? 'text/plain;charset=UTF-8' : 'application/json'
   };
   const canUseRedirectFallback = isScriptGoogleExecUrl(baseUrl);
-  let redirectedBase = '';
+  let redirectedBase = readPersistedRedirectedBase(baseUrl);
   let redirectedBasePromise = null;
+  let warmupPromise = null;
   let mailboxCache = null;
   let mailboxRequestedAt = 0;
   let mailboxInflight = null;
+  const letterCache = new Map();
+  const letterInflight = new Map();
   const MAILBOX_CACHE_TTL_MS = 10 * 1000;
+  const LETTER_CACHE_TTL_MS = 10 * 1000;
 
   async function resolveRedirectedBase() {
     if (!canUseRedirectFallback) {
@@ -163,6 +197,7 @@ function realApi(baseUrl = '') {
         const resolvedUrl = String(response?.url || '').trim();
         if (resolvedUrl.includes('script.googleusercontent.com')) {
           redirectedBase = resolvedUrl;
+          persistRedirectedBase(baseUrl, redirectedBase);
           return redirectedBase;
         }
         return baseUrl;
@@ -225,7 +260,81 @@ function realApi(baseUrl = '') {
     return mailboxInflight;
   }
 
+  function getCachedLetter(letterId) {
+    const key = String(letterId || '');
+    if (!key || !letterCache.has(key)) return null;
+    const cached = letterCache.get(key);
+    if (!cached || Date.now() - cached.requestedAt >= LETTER_CACHE_TTL_MS) {
+      letterCache.delete(key);
+      return null;
+    }
+    return cached.payload;
+  }
+
+  function setCachedLetter(letterId, payload) {
+    const key = String(letterId || '');
+    if (!key || !payload) return;
+    letterCache.set(key, {
+      requestedAt: Date.now(),
+      payload
+    });
+  }
+
+  function invalidateLetterCache(letterId) {
+    const key = String(letterId || '');
+    if (!key) return;
+    letterCache.delete(key);
+    letterInflight.delete(key);
+  }
+
+  function fetchLetter(letterId) {
+    const key = String(letterId || '');
+    if (!key) {
+      return Promise.resolve({ ok: false, message: '편지를 찾을 수 없어요.' });
+    }
+    if (letterInflight.has(key)) {
+      return letterInflight.get(key);
+    }
+
+    const request = getJson(`/api/letters/${key}`)
+      .then((result) => {
+        if (result?.ok && result.letter) {
+          setCachedLetter(key, result);
+        }
+        return result;
+      })
+      .finally(() => {
+        letterInflight.delete(key);
+      });
+
+    letterInflight.set(key, request);
+    return request;
+  }
+
+  function warmup() {
+    if (warmupPromise) {
+      return warmupPromise;
+    }
+
+    warmupPromise = (async () => {
+      if (canUseRedirectFallback && !redirectedBase) {
+        await resolveRedirectedBase();
+      }
+      try {
+        await getJson('/api/phase');
+      } catch (error) {
+        return { ok: false };
+      }
+      return { ok: true };
+    })().finally(() => {
+      warmupPromise = null;
+    });
+
+    return warmupPromise;
+  }
+
   return {
+    warmup,
     async enter(entryCode) {
       const result = await postJson('/api/enter', { entryCode });
       if (result?.ok && result.phase === 'PHASE_2') {
@@ -235,7 +344,10 @@ function realApi(baseUrl = '') {
       return result;
     },
     async submitLetter(payload) {
-      return postJson('/api/letters', payload);
+      const result = await postJson('/api/letters', payload);
+      mailboxCache = null;
+      mailboxRequestedAt = 0;
+      return result;
     },
     async getMailboxes() {
       if (mailboxCache && Date.now() - mailboxRequestedAt < MAILBOX_CACHE_TTL_MS) {
@@ -244,10 +356,19 @@ function realApi(baseUrl = '') {
       return fetchMailboxes();
     },
     async getLetter(letterId) {
-      return getJson(`/api/letters/${letterId}`);
+      const cached = getCachedLetter(letterId);
+      if (cached) {
+        return cached;
+      }
+      return fetchLetter(letterId);
+    },
+    async prefetchLetter(letterId) {
+      return fetchLetter(letterId);
     },
     async createComment(letterId, payload) {
-      return postJson('/api/comments', { letter_id: letterId, ...payload });
+      const result = await postJson('/api/comments', { letter_id: letterId, ...payload });
+      invalidateLetterCache(letterId);
+      return result;
     }
   };
 }

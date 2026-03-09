@@ -53,6 +53,13 @@ async function loadMailbox() {
     }
     dispatch({ type: 'MAILBOX_LOADED', letters: result.letters });
     dispatch({ type: 'REQUEST_SUCCESS' });
+
+    const letters = Array.isArray(result.letters) ? result.letters : [];
+    letters.slice(0, 6).forEach((letter) => {
+      const letterId = String(letter?.letter_id || '');
+      if (!letterId || typeof api.prefetchLetter !== 'function') return;
+      void api.prefetchLetter(letterId).catch(() => null);
+    });
   } catch (error) {
     dispatch({ type: 'REQUEST_ERROR', message: error.message });
   }
@@ -173,6 +180,10 @@ function render() {
 }
 
 async function bootstrap() {
+  if (typeof api.warmup === 'function') {
+    void api.warmup().catch(() => null);
+  }
+
   const persistedPhase = readPersistedEntryPhase();
   if (persistedPhase === 'PHASE_2') {
     dispatch({ type: 'AUTH_OK', phase: 'PHASE_2' });
