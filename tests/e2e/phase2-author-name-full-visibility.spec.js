@@ -27,7 +27,8 @@ test('phase2: read view keeps author right-aligned and fully visible on mobile',
     const authorRect = author.getBoundingClientRect();
     const computed = getComputedStyle(author);
     return {
-      widthRatio: groupRect.width / stageRect.width,
+      groupOverflowRight: groupRect.right - stageRect.right,
+      authorOverflowRight: authorRect.right - stageRect.right,
       fromLeftOfAuthor: fromRect.left < authorRect.left,
       authorRightAnchored: Math.abs(groupRect.right - authorRect.right) <= 1,
       whiteSpace: computed.whiteSpace,
@@ -38,12 +39,13 @@ test('phase2: read view keeps author right-aligned and fully visible on mobile',
     };
   });
 
-  expect(result.widthRatio).toBeGreaterThanOrEqual(0.5);
+  expect(result.groupOverflowRight).toBeLessThanOrEqual(0.5);
+  expect(result.authorOverflowRight).toBeLessThanOrEqual(0.5);
   expect(result.fromLeftOfAuthor).toBe(true);
   expect(result.authorRightAnchored).toBe(true);
-  expect(result.whiteSpace).not.toBe('nowrap');
+  expect(result.whiteSpace).toBe('nowrap');
   expect(result.textOverflow).not.toBe('ellipsis');
-  expect(result.overflowX).not.toBe('hidden');
-  expect(result.overflowWrap).toBe('anywhere');
+  expect(result.overflowX).toBe('visible');
+  expect(result.overflowWrap).not.toBe('anywhere');
   expect(result.textAlign).toBe('right');
 });

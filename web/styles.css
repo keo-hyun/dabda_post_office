@@ -264,24 +264,35 @@ button.ghost {
 }
 
 .letter-read-stage .compose-from-group {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  flex: 0 0 auto;
   width: auto;
-  min-width: 160px;
-  max-width: min(100%, 320px);
+  min-width: 0;
+  max-width: none;
+  margin-top: 0;
+  margin-left: 0;
   justify-content: flex-end;
 }
 
 .letter-read-stage .compose-author-readonly {
   display: block;
-  flex: 0 1 auto;
-  min-width: 72px;
-  max-width: clamp(110px, 50vw, 250px);
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: none;
   text-align: right;
-  white-space: normal;
+  white-space: nowrap;
   overflow: visible;
   text-overflow: clip;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: normal;
+  word-break: keep-all;
   line-height: 1.2;
+}
+
+.letter-read-stage .compose-paper-header {
+  position: relative;
+  min-height: 112px;
 }
 
 .letter-paper-content-readonly {
