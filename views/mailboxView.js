@@ -8,6 +8,10 @@ function escapeHtml(value) {
 }
 
 export function renderMailboxView(container, state, handlers) {
+  const letterById = new Map(
+    (state.letters || []).map((letter) => [String(letter.letter_id || ''), letter])
+  );
+
   const items = state.letters
     .map(
       (letter) => `
@@ -33,6 +37,9 @@ export function renderMailboxView(container, state, handlers) {
   `;
 
   container.querySelectorAll('[data-letter-id]').forEach((button) => {
-    button.addEventListener('click', () => handlers.onOpenLetter(button.dataset.letterId));
+    button.addEventListener('click', () => {
+      const letterId = String(button.dataset.letterId || '');
+      handlers.onOpenLetter(letterById.get(letterId) || letterId);
+    });
   });
 }
