@@ -7,7 +7,17 @@ export function renderEntryView(container, state, handlers, options = {}) {
       <h1>우체국 문을 열어주세요.</h1>
       <form id="entryForm" class="stack">
         <label for="entryCode">입장 코드</label>
-        <input id="entryCode" name="entryCode" value="${state.entryCode || ''}" autocomplete="off" ${disabled} />
+        <input
+          id="entryCode"
+          name="entryCode"
+          value="${state.entryCode || ''}"
+          autocomplete="off"
+          autocapitalize="characters"
+          autocorrect="off"
+          spellcheck="false"
+          inputmode="text"
+          ${disabled}
+        />
         <button type="submit" ${disabled}>입장하기</button>
       </form>
       ${loadingText}
@@ -19,7 +29,11 @@ export function renderEntryView(container, state, handlers, options = {}) {
   const form = container.querySelector('#entryForm');
   const input = container.querySelector('#entryCode');
 
-  input.addEventListener('input', (event) => handlers.onEntryCodeChange(event.target.value));
+  input.addEventListener('input', (event) => {
+    handlers.onEntryCodeChange(event.target.value);
+    container.querySelector('.error')?.remove();
+    container.querySelector('.success')?.remove();
+  });
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     handlers.onEnter(input.value);
