@@ -20,7 +20,7 @@ export function renderLetterView(container, state, handlers) {
     .join('');
 
   container.innerHTML = `
-    <section class="card">
+    <section class="card card_letter">
       <button type="button" class="ghost" id="backToMailbox">목록으로</button>
       <div class="letter-paper-stage letter-read-stage">
         <div class="compose-paper-header">
@@ -47,13 +47,13 @@ export function renderLetterView(container, state, handlers) {
       <h3>댓글</h3>
       ${state.error ? `<p class="error">${state.error}</p>` : ''}
       ${state.success ? `<p class="success">${state.success}</p>` : ''}
-      <ul class="comment-list">${comments || '<li>첫 댓글을 남겨보세요.</li>'}</ul>
-      <form id="commentForm" class="stack">
+      <ul class="comment-list">${comments || '<li>첫 댓글을 남겨보세요. :)</li>'}</ul>
+      <form id="commentForm" class="stack comment_Area">
         <label for="commentNickname">작성자</label>
         <input id="commentNickname" required ${disabled} />
         <label for="commentContent">댓글</label>
         <textarea id="commentContent" rows="3" required ${disabled}></textarea>
-        <button type="submit" ${disabled}>댓글 남기기</button>
+        <button class="enter_btn" type="submit" ${disabled}>댓글 남기기</button>
       </form>
     </section>
   `;

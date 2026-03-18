@@ -1,7 +1,7 @@
 export function renderComposeView(container, state, handlers) {
   const disabled = state.loading ? 'disabled' : '';
   container.innerHTML = `
-    <section class="card">
+    <section class="card card_letter">
       <form id="composeForm" class="stack">
         <div class="letter-paper-stage compose-paper">
           <div class="compose-paper-header">
@@ -39,7 +39,7 @@ export function renderComposeView(container, state, handlers) {
           <option value="PUBLIC">공개</option>
           <option value="PRIVATE">비공개</option>
         </select>
-        <button type="submit" ${disabled}>우체통에 넣기</button>
+        <button class="enter_btn" type="submit" ${disabled}>우체통에 넣기</button>
       </form>
       ${state.loading ? '<p class="muted">편지를 전송하고 있어요...</p>' : ''}
       ${state.error ? `<p class="error">${state.error}</p>` : ''}

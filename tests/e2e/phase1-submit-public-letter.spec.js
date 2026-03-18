@@ -22,13 +22,19 @@ test('phase1: user can submit public letter', async ({ page }) => {
 
   const lineStyle = await page.locator('.compose-author-input').evaluate((element) => {
     const style = getComputedStyle(element);
-    return style.borderBottomColor;
+    return {
+      color: style.borderBottomColor,
+      style: style.borderBottomStyle,
+      width: style.borderBottomWidth
+    };
   });
   const contentLineStyle = await page.locator('.letter-paper-content').evaluate((element) => {
     const style = getComputedStyle(element);
     return style.backgroundImage;
   });
-  expect(lineStyle).toContain('rgba');
+  expect(lineStyle.style).toBe('solid');
+  expect(lineStyle.width).toBe('1px');
+  expect(lineStyle.color).not.toBe('rgba(0, 0, 0, 0)');
   expect(contentLineStyle).toContain('linear-gradient');
 
   const overflowCheck = await page.locator('.compose-paper').evaluate((paper) => {
@@ -58,5 +64,5 @@ test('phase1: user can submit public letter', async ({ page }) => {
   await page.getByLabel('작성자').fill('다답이');
   await page.getByLabel('편지 내용').fill('테스트 편지');
   await page.getByRole('button', { name: '우체통에 넣기' }).click();
-  await expect(page.getByText('전송 완료')).toBeVisible();
+  await expect(page.getByText('편지가 발송되었어요. 감사합니다! 💌')).toBeVisible();
 });

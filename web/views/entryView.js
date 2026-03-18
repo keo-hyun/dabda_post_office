@@ -3,8 +3,13 @@ export function renderEntryView(container, state, handlers, options = {}) {
   const loadingText = state.loading ? '<p class="muted">확인 중...</p>' : '';
   container.innerHTML = `
     <section class="card">
-      <p class="eyebrow">다브다 우체국</p>
-      <h1>우체국 문을 열어주세요.</h1>
+      <p class="eyebrow subtitle">2026 New Single [Dear Hope]</p>
+      <h1>Dabda PostOffice</h1>
+      <img class="house" src="./assets/house.png" alt="house" />
+      <p class="house_text">
+        다브다 우체국에 오신 것을 환영합니다.<br />
+        당신의 희망씨에게 편지를 전해드릴게요.
+      </p>
       <form id="entryForm" class="stack">
         <label for="entryCode">입장 코드</label>
         <input
@@ -18,7 +23,7 @@ export function renderEntryView(container, state, handlers, options = {}) {
           inputmode="text"
           ${disabled}
         />
-        <button type="submit" ${disabled}>입장하기</button>
+        <button class="enter_btn" type="submit" ${disabled}>입장하기</button>
       </form>
       ${loadingText}
       ${state.error ? `<p class="error">${state.error}</p>` : ''}
