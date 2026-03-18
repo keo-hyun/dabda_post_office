@@ -1,7 +1,7 @@
 export function renderComposeView(container, state, handlers) {
   const disabled = state.loading ? 'disabled' : '';
   container.innerHTML = `
-    <section class="card">
+    <section class="card card_letter">
       <form id="composeForm" class="stack">
         <div class="letter-paper-stage compose-paper">
           <div class="compose-paper-header">
