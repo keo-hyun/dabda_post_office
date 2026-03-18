@@ -8,7 +8,10 @@ test('entry input keeps focus while typing continuously', async ({ page }) => {
 
   const entryInput = page.getByLabel('입장 코드');
   await entryInput.click();
+  const originalNode = await entryInput.elementHandle();
   await page.keyboard.type('DABDA2026');
 
   await expect(entryInput).toHaveValue('DABDA2026');
+  await expect(page.evaluate(() => document.activeElement?.id)).resolves.toBe('entryCode');
+  await expect(page.evaluate((node) => node === document.querySelector('#entryCode'), originalNode)).resolves.toBe(true);
 });
