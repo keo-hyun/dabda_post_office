@@ -23,7 +23,7 @@ export function renderEntryView(container, state, handlers, options = {}) {
           inputmode="text"
           ${disabled}
         />
-        <button type="submit" ${disabled}>입장하기</button>
+        <button class="enter_btn" type="submit" ${disabled}>입장하기</button>
       </form>
       ${loadingText}
       ${state.error ? `<p class="error">${state.error}</p>` : ''}

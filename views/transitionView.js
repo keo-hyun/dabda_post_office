@@ -3,7 +3,7 @@ export function renderTransitionView(container) {
     <section class="card">
       <p class="eyebrow subtitle">2026 New Single [Dear Hope]</p>
       <h1>Dabda PostOffice</h1>
-      <h2>희망씨에게 편지가 발송되었어요.</h2>
+      <h2>편지가 발송되었어요. 감사합니다! 💌</h2>
       <p>곧 열릴 우체통을 기다려주세요. 📮</p>
       <img class="postbox" src="./assets/postbox.png" alt="postbox" />
     </section>

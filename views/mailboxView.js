@@ -29,6 +29,8 @@ export function renderMailboxView(container, state, handlers) {
 
   container.innerHTML = `
     <section class="card">
+      <p class="eyebrow subtitle">2026 New Single [Dear Hope]</p>
+      <h1>Dabda PostOffice</h1>
       <h2>우체통 둘러보기</h2>
       ${state.loading ? '<p class="muted">우체통을 불러오는 중...</p>' : ''}
       ${state.error ? `<p class="error">${state.error}</p>` : ''}
