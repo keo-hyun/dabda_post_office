@@ -25,7 +25,15 @@ describe('frontend asset cleanup guards', () => {
   });
 
   it('keeps required production assets', () => {
-    ['Dear_Hope.png', 'From.png', 'post_3.png', 'audio_1.mp3'].forEach((name) => {
+    [
+      'Dear_Hope.png',
+      'From.png',
+      'post_3.png',
+      'audio_1.mp3',
+      'house.png',
+      'postbox.png',
+      'DabdaPostOffice_02.jpg'
+    ].forEach((name) => {
       expect(fs.existsSync(path.join(ASSET_DIR, name))).toBe(true);
     });
   });
