@@ -44,6 +44,10 @@ function dispatch(action) {
   render();
 }
 
+function updateEntryCode(value) {
+  state = reduceAppState(state, { type: 'SET_ENTRY_CODE', value });
+}
+
 async function loadMailbox() {
   dispatch({ type: 'REQUEST_START' });
   try {
@@ -148,7 +152,7 @@ function render() {
 
   if (state.screen === 'ENTRY') {
     renderEntryView(root, state, {
-      onEntryCodeChange: (value) => dispatch({ type: 'SET_ENTRY_CODE', value }),
+      onEntryCodeChange: updateEntryCode,
       onEnter
     }, {
       restoreInputFocus: shouldRestoreEntryFocus
