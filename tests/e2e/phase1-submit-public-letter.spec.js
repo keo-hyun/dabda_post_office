@@ -9,6 +9,7 @@ test('phase1: user can submit public letter', async ({ page }) => {
   await expect(page.locator('.compose-paper')).toBeVisible();
   await expect(page.locator('.compose-dear-image')).toBeVisible();
   await expect(page.locator('.compose-from-image')).toBeVisible();
+  await expect(page.getByLabel('이메일')).toBeVisible();
   await expect(page.locator('.letter-paper-image')).toHaveCount(0);
   const fromLayout = await page.locator('.compose-from-group').evaluate((element) => {
     const style = getComputedStyle(element);
@@ -63,6 +64,7 @@ test('phase1: user can submit public letter', async ({ page }) => {
 
   await page.getByLabel('작성자').fill('다답이');
   await page.getByLabel('편지 내용').fill('테스트 편지');
+  await page.getByLabel('이메일').fill('writer@example.com');
   await page.getByRole('button', { name: '우체통에 넣기' }).click();
   await expect(page.getByText('편지가 발송되었어요. 감사합니다! 💌')).toBeVisible();
 });

@@ -34,6 +34,17 @@ export function renderComposeView(container, state, handlers) {
             placeholder="이곳에 편지를 작성해 주세요."
           ></textarea>
         </div>
+        <div class="compose-meta-field">
+          <label for="letterEmail">이메일</label>
+          <input
+            id="letterEmail"
+            type="email"
+            autocomplete="email"
+            required
+            ${disabled}
+            placeholder="이메일"
+          />
+        </div>
         <label for="letterVisibility">공개 설정</label>
         <select id="letterVisibility" ${disabled}>
           <option value="PUBLIC">공개</option>
@@ -51,6 +62,7 @@ export function renderComposeView(container, state, handlers) {
     event.preventDefault();
     handlers.onSubmitLetter({
       nickname: container.querySelector('#letterNickname').value,
+      email: container.querySelector('#letterEmail').value,
       content: container.querySelector('#letterContent').value,
       visibility: container.querySelector('#letterVisibility').value
     });
