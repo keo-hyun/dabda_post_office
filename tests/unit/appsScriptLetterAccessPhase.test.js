@@ -24,8 +24,8 @@ describe('apps script letter access phase context', () => {
             return {
               getDataRange: () => ({
                 getValues: () => [
-                  ['letter_id', 'user_id', 'nickname', 'content', 'image_file_id', 'visibility', 'phase_created', 'created_at'],
-                  ['l_test_1', '', '테스터', 'phase2 상세 조회', '', 'PUBLIC', 'PHASE_1', '2026-03-04T00:00:00.000Z']
+                  ['letter_id', 'user_id', 'nickname', 'content', 'email', 'visibility', 'phase_created', 'created_at'],
+                  ['l_test_1', '', '테스터', 'phase2 상세 조회', 'reader@example.com', 'PUBLIC', 'PHASE_1', '2026-03-04T00:00:00.000Z']
                 ]
               })
             };

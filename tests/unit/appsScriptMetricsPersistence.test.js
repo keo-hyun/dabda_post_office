@@ -8,8 +8,6 @@ afterEach(() => {
   delete globalThis.getAllRows;
   delete globalThis.mapHeaderRow;
   delete globalThis.updateRowBy;
-  delete globalThis.normalizeBase64Image;
-  delete globalThis.uploadImageToDrive;
 });
 
 describe('apps script metrics persistence', () => {
@@ -34,8 +32,6 @@ describe('apps script metrics persistence', () => {
     globalThis.getAllRows = () => [];
     globalThis.mapHeaderRow = () => ({});
     globalThis.updateRowBy = () => null;
-    globalThis.normalizeBase64Image = () => ({ mimeType: '', base64: '' });
-    globalThis.uploadImageToDrive = () => ({ fileId: '' });
 
     const response = doPost({
       parameter: { path: '/api/enter' },

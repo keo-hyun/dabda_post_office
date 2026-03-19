@@ -44,10 +44,6 @@ function routeFns() {
 function gatewayFns() {
   if (typeof appendRow === 'function') {
     return {
-      driveGateway: {
-        normalizeBase64Image: normalizeBase64Image,
-        uploadImageToDrive: uploadImageToDrive
-      },
       sheetsGateway: {
         appendRow: appendRow,
         findRowBy: findRowBy,
@@ -58,11 +54,9 @@ function gatewayFns() {
     };
   }
 
-  var drive = require('./lib/driveGateway.js');
   var sheets = require('./lib/sheetsGateway.js');
 
   return {
-    driveGateway: drive,
     sheetsGateway: sheets
   };
 }
@@ -114,9 +108,7 @@ function buildRouteDeps() {
 
   return {
     cacheGateway: cacheGateway,
-    driveFolderId: props.DRIVE_FOLDER_ID || '',
     spreadsheetId: props.SPREADSHEET_ID || '',
-    driveGateway: gateways.driveGateway,
     sheetsGateway: gateways.sheetsGateway
   };
 }
