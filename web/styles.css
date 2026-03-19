@@ -233,7 +233,14 @@ button.ghost {
   margin: 16px auto;
   display: grid;
   gap: 10px;
+}
+
+.mailbox-list {
   color:#e2dcc4;
+}
+
+.comment-list {
+  color: #000000;
 }
 
 .comment_Area{
@@ -266,8 +273,12 @@ button.ghost {
 }
 
 .muted {
-  color: var(--muted);
+  color: #ffbefe;
   margin-top: 10px;
+}
+
+.compose-loading {
+  color: #000000;
 }
 
 .letter-content {
@@ -511,7 +522,7 @@ button.ghost {
 
   .compose-paper .compose-author-input {
     margin-left: -2px;
-    margin-right: 1px;
+    margin-right: 2px;
     max-width: none;
   }
 
