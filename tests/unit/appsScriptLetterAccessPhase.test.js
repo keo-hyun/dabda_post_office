@@ -58,6 +58,7 @@ describe('apps script letter access phase context', () => {
 
     expect(parsed.ok).toBe(true);
     expect(parsed.letter.letter_id).toBe('l_test_1');
+    expect(parsed.letter.email).toBeUndefined();
     expect(parsed.letter.comments).toHaveLength(1);
     expect(parsed.letter.comments[0].comment_id).toBe('c_1');
   });

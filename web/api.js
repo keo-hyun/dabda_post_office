@@ -112,6 +112,12 @@ function isScriptGoogleExecUrl(baseUrl) {
 }
 
 function mockApi() {
+  function redactPublicLetter(letter) {
+    const source = letter || {};
+    const { email, ...rest } = source;
+    return rest;
+  }
+
   return {
     async warmup() {
       return { ok: true };
@@ -135,12 +141,15 @@ function mockApi() {
       return { ok: true, letter: next };
     },
     async getMailboxes() {
-      return { ok: true, letters: mockDb.letters.filter((letter) => letter.visibility === 'PUBLIC') };
+      return {
+        ok: true,
+        letters: mockDb.letters.filter((letter) => letter.visibility === 'PUBLIC').map((letter) => redactPublicLetter(letter))
+      };
     },
     async getLetter(letterId) {
       const letter = mockDb.letters.find((item) => item.letter_id === letterId);
       if (!letter) return { ok: false, message: '편지를 찾을 수 없어요.' };
-      return { ok: true, letter };
+      return { ok: true, letter: redactPublicLetter(letter) };
     },
     async prefetchLetter(letterId) {
       return this.getLetter(letterId);

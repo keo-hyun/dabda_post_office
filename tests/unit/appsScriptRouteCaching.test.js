@@ -7,8 +7,8 @@ describe('apps script route caching', () => {
     const cache = new Map();
     const sheetsGateway = {
       getAllRows: vi.fn(() => [
-        { letter_id: 'l1', visibility: 'PUBLIC' },
-        { letter_id: 'l2', visibility: 'PUBLIC' }
+        { letter_id: 'l1', visibility: 'PUBLIC', email: 'reader1@example.com' },
+        { letter_id: 'l2', visibility: 'PUBLIC', email: 'reader2@example.com' }
       ])
     };
     const cacheGateway = {
@@ -30,6 +30,8 @@ describe('apps script route caching', () => {
 
     expect(first.ok).toBe(true);
     expect(second.ok).toBe(true);
+    expect(first.letters[0].email).toBeUndefined();
+    expect(second.letters[0].email).toBeUndefined();
     expect(sheetsGateway.getAllRows).toHaveBeenCalledTimes(1);
     expect(cacheGateway.set).toHaveBeenCalledTimes(1);
   });
@@ -38,7 +40,7 @@ describe('apps script route caching', () => {
     const cache = new Map();
     const sheetsGateway = {
       findRowBy: vi.fn(() => ({
-        row: { letter_id: 'l1', visibility: 'PUBLIC', content: 'test' }
+        row: { letter_id: 'l1', visibility: 'PUBLIC', content: 'test', email: 'reader@example.com' }
       })),
       getAllRows: vi.fn(() => [
         {
@@ -70,6 +72,8 @@ describe('apps script route caching', () => {
 
     expect(first.ok).toBe(true);
     expect(second.ok).toBe(true);
+    expect(first.letter.email).toBeUndefined();
+    expect(second.letter.email).toBeUndefined();
     expect(first.letter.comments).toHaveLength(1);
     expect(second.letter.comments).toHaveLength(1);
     expect(sheetsGateway.findRowBy).toHaveBeenCalledTimes(1);

@@ -56,6 +56,22 @@ function invalidateMailboxCache(cacheGateway, spreadsheetId) {
   }
 }
 
+function redactLetterForPublicView(letter, context) {
+  var source = letter || {};
+  var ctx = context || {};
+  var result = {};
+  var canSeeEmail = Boolean(ctx.isAdmin || ctx.isOwner);
+
+  Object.keys(source).forEach(function (key) {
+    if (key === 'email' && !canSeeEmail) {
+      return;
+    }
+    result[key] = source[key];
+  });
+
+  return result;
+}
+
 function createLetterRoute(body, deps) {
   var payload = body || {};
   var options = deps || {};
@@ -114,7 +130,9 @@ function getMailboxesRoute(letters, context, deps) {
     if (Array.isArray(cachedLetters)) {
       return {
         ok: true,
-        letters: cachedLetters,
+        letters: cachedLetters.map(function (letter) {
+          return redactLetterForPublicView(letter, ctx);
+        }),
         metric: core.buildMetricEvent('MAILBOX_VIEW', { userId: ctx.userId || '' })
       };
     }
@@ -127,6 +145,8 @@ function getMailboxesRoute(letters, context, deps) {
       : [];
   var visibleLetters = source.filter(function (letter) {
     return core.canViewLetter(letter, ctx) && letter.visibility === 'PUBLIC';
+  }).map(function (letter) {
+    return redactLetterForPublicView(letter, ctx);
   });
 
   if (!inputLetters.length && spreadsheetId) {
@@ -155,7 +175,7 @@ function getLetterByIdRoute(letter, context, deps) {
     if (cachedLetter && core.canViewLetter(cachedLetter, ctx)) {
       return {
         ok: true,
-        letter: cachedLetter
+        letter: redactLetterForPublicView(cachedLetter, ctx)
       };
     }
   }
@@ -191,7 +211,7 @@ function getLetterByIdRoute(letter, context, deps) {
     }
   }
 
-  var letterWithComments = Object.assign({}, source, { comments: comments });
+  var letterWithComments = Object.assign({}, redactLetterForPublicView(source, ctx), { comments: comments });
   if (spreadsheetId && source.letter_id) {
     writeCachedJson(cacheGateway, letterDetailCacheKey(spreadsheetId, source.letter_id), letterWithComments, 15);
   }

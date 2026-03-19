@@ -96,6 +96,32 @@ describe('frontend api client', () => {
     expect(result.letter.email).toBe('writer@example.com');
   });
 
+  it('hides email from public mock mailbox and letter responses', async () => {
+    globalThis.window = {
+      location: {
+        hostname: '127.0.0.1',
+        search: ''
+      }
+    };
+    globalThis.fetch = vi.fn();
+
+    const api = createApiClient();
+    const created = await api.submitLetter({
+      nickname: '작성자',
+      email: 'writer@example.com',
+      content: '편지',
+      visibility: 'PUBLIC'
+    });
+
+    const mailboxes = await api.getMailboxes();
+    const detail = await api.getLetter(created.letter.letter_id);
+
+    expect(mailboxes.ok).toBe(true);
+    expect(mailboxes.letters[0].email).toBeUndefined();
+    expect(detail.ok).toBe(true);
+    expect(detail.letter.email).toBeUndefined();
+  });
+
   it('submits email with letter payload in real mode', async () => {
     globalThis.window = {
       location: {
