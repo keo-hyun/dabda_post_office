@@ -27,6 +27,7 @@ describe('apps script error handling', () => {
       postData: {
         contents: JSON.stringify({
           nickname: '테스터',
+          email: 'tester@example.com',
           content: '편지 테스트',
           visibility: 'PUBLIC'
         })
