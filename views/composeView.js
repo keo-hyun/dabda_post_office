@@ -52,7 +52,7 @@ export function renderComposeView(container, state, handlers) {
         </select>
         <button class="enter_btn" type="submit" ${disabled}>우체통에 넣기</button>
       </form>
-      ${state.loading ? '<p class="muted">편지를 전송하고 있어요...</p>' : ''}
+      ${state.loading ? '<p class="muted compose-loading">편지를 전송하고 있어요...</p>' : ''}
       ${state.error ? `<p class="error">${state.error}</p>` : ''}
       ${state.success ? `<p class="success">${state.success}</p>` : ''}
     </section>
