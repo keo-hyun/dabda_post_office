@@ -4,8 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dabda Post Office</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link id="appStylesheet" rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="https://use.typekit.net/awz3imm.css">
+    <script>
+      const assetVersion = new URLSearchParams(window.location.search).get('v') || '20260319-cache1';
+      const stylesheet = document.getElementById('appStylesheet');
+
+      if (stylesheet) {
+        stylesheet.href = `./styles.css?v=${assetVersion}`;
+      }
+
+      window.__APP_ASSET_VERSION__ = assetVersion;
+    </script>
     <script>
         (function(d) {
           var config = {
@@ -42,6 +52,12 @@
     <main class="page">
       <div id="app"></div>
     </main>
-    <script type="module" src="./app.js"></script>
+    <script type="module">
+      const assetVersion = window.__APP_ASSET_VERSION__ || '20260319-cache1';
+      const appScript = document.createElement('script');
+      appScript.type = 'module';
+      appScript.src = `./app.js?v=${assetVersion}`;
+      document.body.appendChild(appScript);
+    </script>
   </body>
 </html>
