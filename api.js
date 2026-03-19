@@ -126,6 +126,7 @@ function mockApi() {
       const next = {
         letter_id: `letter-${mockDb.letters.length + 1}`,
         nickname: payload.nickname || '익명',
+        email: payload.email || '',
         content: payload.content,
         visibility: payload.visibility || 'PUBLIC',
         comments: []
