@@ -81,9 +81,9 @@ function validateLetterPayload(payload) {
     return { ok: false, message: 'CONTENT_TOO_LONG' };
   }
 
-  var imageBytes = (payload && (payload.imageBytes || (payload.image && payload.image.size))) || 0;
-  if (Number(imageBytes) > 5 * 1024 * 1024) {
-    return { ok: false, message: 'IMAGE_TOO_LARGE' };
+  var email = String((payload && payload.email) || '').trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { ok: false, message: 'INVALID_EMAIL' };
   }
 
   var visibility = String((payload && payload.visibility) || 'PUBLIC');

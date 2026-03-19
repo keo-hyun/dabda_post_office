@@ -10,7 +10,7 @@ const SHEETS = {
       'user_id',
       'nickname',
       'content',
-      'image_file_id',
+      'email',
       'visibility',
       'phase_created',
       'created_at'

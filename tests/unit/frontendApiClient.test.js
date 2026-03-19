@@ -75,6 +75,39 @@ describe('frontend api client', () => {
     expect(missingNickname.ok).toBe(false);
   });
 
+  it('submits email with letter payload in real mode', async () => {
+    globalThis.window = {
+      location: {
+        hostname: '127.0.0.1',
+        search: `?apiMode=real&apiBase=${encodeURIComponent(GAS_WEB_APP_URL)}`
+      }
+    };
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, message: 'LETTER_CREATED' })
+    });
+
+    const api = createApiClient();
+    const payload = {
+      nickname: '작성자',
+      email: 'writer@example.com',
+      content: '내용',
+      visibility: 'PUBLIC'
+    };
+
+    const result = await api.submitLetter(payload);
+
+    expect(result.ok).toBe(true);
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      `${GAS_WEB_APP_URL}?path=%2Fapi%2Fletters`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+    );
+  });
+
   it('reuses phase2 mailbox prefetch request when mailbox is requested immediately after entry', async () => {
     globalThis.window = {
       location: {

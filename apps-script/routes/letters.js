@@ -10,17 +10,6 @@ function lettersCore() {
   return require('../lib/core.js');
 }
 
-function getDriveGateway(deps) {
-  var options = deps || {};
-  if (options.driveGateway) return options.driveGateway;
-
-  if (typeof uploadImageToDrive === 'function') {
-    return { uploadImageToDrive: uploadImageToDrive };
-  }
-
-  return require('../lib/driveGateway.js');
-}
-
 function mailboxCacheKey(spreadsheetId) {
   return 'mailboxes:' + String(spreadsheetId || '');
 }
@@ -72,18 +61,17 @@ function createLetterRoute(body, deps) {
   var options = deps || {};
   var core = lettersCore();
   var sheetsGateway = options.sheetsGateway || null;
-  var driveGateway = getDriveGateway(options);
-  var driveFolderId = options.driveFolderId || payload.drive_folder_id || '';
   var spreadsheetId = options.spreadsheetId || '';
   var cacheGateway = options.cacheGateway || null;
   var validation = core.validateLetterPayload(payload);
   var nickname = String(payload.nickname || '').trim();
+  var email = String(payload.email || '').trim();
 
   if (!validation.ok) {
     return validation;
   }
 
-  if (!nickname) {
+  if (!nickname || !email) {
     return { ok: false, message: 'INVALID_PAYLOAD' };
   }
 
@@ -92,21 +80,11 @@ function createLetterRoute(body, deps) {
     user_id: payload.user_id || '',
     nickname: nickname,
     content: payload.content || '',
-    image_file_id: payload.image_file_id || '',
+    email: email,
     visibility: payload.visibility || 'PUBLIC',
     phase_created: payload.phase_created || '',
     created_at: payload.created_at || new Date().toISOString()
   };
-
-  if (payload.imageDataUri && driveFolderId) {
-    var uploaded = driveGateway.uploadImageToDrive(
-      payload.imageDataUri,
-      driveFolderId,
-      payload.imageFilename || letter.letter_id + '.png',
-      options.driveServices || {}
-    );
-    letter.image_file_id = uploaded.fileId || '';
-  }
 
   if (sheetsGateway && spreadsheetId) {
     sheetsGateway.appendRow('Letters', letter, { spreadsheetId: spreadsheetId });

@@ -118,6 +118,7 @@ describe('apps script route caching', () => {
     const result = createLetterRoute(
       {
         nickname: '작성자',
+        email: 'writer@example.com',
         content: '내용',
         visibility: 'PUBLIC'
       },
@@ -129,6 +130,8 @@ describe('apps script route caching', () => {
     );
 
     expect(result.ok).toBe(true);
+    expect(result.letter.email).toBe('writer@example.com');
+    expect('image_file_id' in result.letter).toBe(false);
     expect(cacheGateway.remove).toHaveBeenCalledTimes(1);
     expect(cacheGateway.remove.mock.calls[0][0]).toContain('mailboxes');
   });
