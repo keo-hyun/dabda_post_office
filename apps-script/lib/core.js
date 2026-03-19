@@ -21,7 +21,13 @@ function sha256Hex(value) {
 }
 
 function validateEntryCode(input, expected) {
-  return typeof input === 'string' && typeof expected === 'string' && input === expected;
+  if (typeof input !== 'string' || typeof expected !== 'string') {
+    return false;
+  }
+
+  var normalizedInput = input.trim().toUpperCase();
+  var normalizedExpected = expected.trim().toUpperCase();
+  return Boolean(normalizedInput) && normalizedInput === normalizedExpected;
 }
 
 function hashPassword(plain) {

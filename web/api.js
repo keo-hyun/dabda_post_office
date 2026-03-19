@@ -118,12 +118,18 @@ function mockApi() {
     return rest;
   }
 
+  function matchesEntryCode(input, expected) {
+    const normalizedInput = String(input || '').trim().toUpperCase();
+    const normalizedExpected = String(expected || '').trim().toUpperCase();
+    return Boolean(normalizedInput) && normalizedInput === normalizedExpected;
+  }
+
   return {
     async warmup() {
       return { ok: true };
     },
     async enter(entryCode) {
-      if (entryCode !== 'DABDA2026') {
+      if (!matchesEntryCode(entryCode, 'DABDA2026')) {
         return { ok: false, message: '입장 코드가 올바르지 않아요.' };
       }
       return { ok: true, phase: readPhaseOverride() };

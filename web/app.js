@@ -113,8 +113,7 @@ async function submitComment(payload) {
 async function onEnter(entryCode) {
   dispatch({ type: 'REQUEST_START' });
   try {
-    const normalizedEntryCode = String(entryCode || '').trim().toUpperCase();
-    const result = await api.enter(normalizedEntryCode);
+    const result = await api.enter(entryCode);
     if (!result.ok) {
       dispatch({ type: 'AUTH_ERROR', message: result.message });
       return;

@@ -1,7 +1,13 @@
 const crypto = require('crypto');
 
 function validateEntryCode(input, expected) {
-  return typeof input === 'string' && typeof expected === 'string' && input === expected;
+  if (typeof input !== 'string' || typeof expected !== 'string') {
+    return false;
+  }
+
+  const normalizedInput = input.trim().toUpperCase();
+  const normalizedExpected = expected.trim().toUpperCase();
+  return Boolean(normalizedInput) && normalizedInput === normalizedExpected;
 }
 
 function hashPassword(plain) {

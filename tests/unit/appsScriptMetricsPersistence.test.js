@@ -36,7 +36,7 @@ describe('apps script metrics persistence', () => {
     const response = doPost({
       parameter: { path: '/api/enter' },
       postData: {
-        contents: JSON.stringify({ entryCode: 'DABDA2026' })
+        contents: JSON.stringify({ entryCode: 'dabda2026' })
       }
     });
     const parsed = JSON.parse(response);
