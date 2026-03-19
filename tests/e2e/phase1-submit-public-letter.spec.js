@@ -66,5 +66,5 @@ test('phase1: user can submit public letter', async ({ page }) => {
   await page.getByLabel('편지 내용').fill('테스트 편지');
   await page.getByLabel('이메일').fill('writer@example.com');
   await page.getByRole('button', { name: '우체통에 넣기' }).click();
-  await expect(page.getByText('편지가 발송되었어요. 감사합니다! 💌')).toBeVisible();
+  await expect(page.getByText('희망씨에게 편지가 발송되었어요.')).toBeVisible();
 });
