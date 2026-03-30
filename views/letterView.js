@@ -21,7 +21,6 @@ export function renderLetterView(container, state, handlers) {
 
   container.innerHTML = `
     <section class="card card_letter">
-      <button type="button" class="ghost" id="backToMailbox">목록으로</button>
       <div class="letter-paper-stage letter-read-stage">
         <div class="compose-paper-header">
           <img
@@ -54,6 +53,7 @@ export function renderLetterView(container, state, handlers) {
         <label for="commentContent">댓글</label>
         <textarea id="commentContent" rows="3" required ${disabled}></textarea>
         <button class="enter_btn" type="submit" ${disabled}>댓글 남기기</button>
+        <button type="button" class="ghost" id="backToMailbox">목록으로</button>
       </form>
     </section>
   `;
