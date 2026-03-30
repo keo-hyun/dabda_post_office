@@ -8,6 +8,7 @@ import { renderMailboxView } from './views/mailboxView.js';
 import { renderTransitionView } from './views/transitionView.js';
 
 const ENTRY_SESSION_KEY = 'dabda-post-office-entry-phase';
+const APP_HISTORY_KEY = 'dabda-post-office-history';
 const api = createApiClient();
 const root = document.getElementById('app');
 let state = { ...initialState };
@@ -39,6 +40,42 @@ function readPersistedEntryPhase() {
   return String(storage.getItem(ENTRY_SESSION_KEY) || '');
 }
 
+function getHistoryState() {
+  if (typeof window === 'undefined' || !window.history) {
+    return null;
+  }
+
+  return window.history.state || null;
+}
+
+function replaceAppHistory(screen, options = {}) {
+  if (typeof window === 'undefined' || !window.history?.replaceState) {
+    return;
+  }
+
+  const nextState = {
+    [APP_HISTORY_KEY]: true,
+    screen,
+    letterId: options.letterId || ''
+  };
+
+  window.history.replaceState(nextState, '', window.location.href);
+}
+
+function pushAppHistory(screen, options = {}) {
+  if (typeof window === 'undefined' || !window.history?.pushState) {
+    return;
+  }
+
+  const nextState = {
+    [APP_HISTORY_KEY]: true,
+    screen,
+    letterId: options.letterId || ''
+  };
+
+  window.history.pushState(nextState, '', window.location.href);
+}
+
 function dispatch(action) {
   state = reduceAppState(state, action);
   render();
@@ -57,6 +94,7 @@ async function loadMailbox() {
     }
     dispatch({ type: 'MAILBOX_LOADED', letters: result.letters });
     dispatch({ type: 'REQUEST_SUCCESS' });
+    replaceAppHistory('MAILBOX');
 
     const letters = Array.isArray(result.letters) ? result.letters : [];
     letters.slice(0, 6).forEach((letter) => {
@@ -69,15 +107,20 @@ async function loadMailbox() {
   }
 }
 
-async function openLetter(letterOrId) {
+async function openLetter(letterOrId, options = {}) {
   const letterId =
     typeof letterOrId === 'string' ? letterOrId : letterOrId && letterOrId.letter_id ? String(letterOrId.letter_id) : '';
   if (!letterId) return;
+  const syncHistory = options.syncHistory !== false;
 
   const previewLetter =
     (letterOrId && typeof letterOrId === 'object' ? letterOrId : null) ||
     state.letters.find((item) => String(item.letter_id) === letterId) ||
     (state.selectedLetterId === letterId ? state.selectedLetter : null);
+
+  if (syncHistory) {
+    pushAppHistory('LETTER', { letterId });
+  }
 
   dispatch({ type: 'OPEN_LETTER', letterId, letter: previewLetter });
   dispatch({ type: 'REQUEST_START' });
@@ -146,6 +189,37 @@ async function onSubmitLetter(payload) {
   }
 }
 
+function backToMailbox() {
+  const currentHistory = getHistoryState();
+
+  if (currentHistory?.[APP_HISTORY_KEY] && currentHistory.screen === 'LETTER' && typeof window !== 'undefined' && window.history?.back) {
+    window.history.back();
+    return;
+  }
+
+  dispatch({ type: 'BACK_TO_MAILBOX' });
+  replaceAppHistory('MAILBOX');
+}
+
+function handlePopState(event) {
+  const nextState = event.state || null;
+  if (!nextState?.[APP_HISTORY_KEY]) {
+    return;
+  }
+
+  if (nextState.screen === 'MAILBOX') {
+    dispatch({ type: 'BACK_TO_MAILBOX' });
+    if (!Array.isArray(state.letters) || state.letters.length === 0) {
+      void loadMailbox();
+    }
+    return;
+  }
+
+  if (nextState.screen === 'LETTER' && nextState.letterId) {
+    void openLetter(nextState.letterId, { syncHistory: false });
+  }
+}
+
 function render() {
   if (!root) return;
   const shouldRestoreEntryFocus = document.activeElement?.id === 'entryCode';
@@ -177,13 +251,17 @@ function render() {
 
   if (state.screen === 'LETTER') {
     renderLetterView(root, state, {
-      onBack: () => dispatch({ type: 'BACK_TO_MAILBOX' }),
+      onBack: backToMailbox,
       onSubmitComment: submitComment
     });
   }
 }
 
 async function bootstrap() {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('popstate', handlePopState);
+  }
+
   if (typeof api.warmup === 'function') {
     void api.warmup().catch(() => null);
   }
@@ -195,6 +273,7 @@ async function bootstrap() {
     return;
   }
 
+  replaceAppHistory('ENTRY');
   render();
 }
 
